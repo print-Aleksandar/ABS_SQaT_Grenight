@@ -1,5 +1,5 @@
 import numpy as np
-from domain.configs import MAX_STEPS_WITHOUT_PROGRESS, ROWS, PREVIOUS_K_STEPS_IN_STATE, DISCOUNT_FACTOR_GAMMA
+from domain.configs import MAX_STEPS_WITHOUT_PROGRESS, ROWS, DISCOUNT_FACTOR_GAMMA
 from domain.pieces import Piece, Pawn, PIECES_NUMBERS
 from domain.requests import MoveRequest, ValidMovesPiecesRequest
 from domain.exceptions import GrenightException
@@ -8,7 +8,6 @@ from application.game_service import make_move, gather_valid_moves_player
 from application.board_getter import get_piece_by_position
 from environment.action_encoder import ActionEncoder
 from environment.piece_plane_encoder import PiecePlaneEncoder
-from environment.previous_pieces_encoded_q import PreviousPiecesEncodedQ
 
 
 def rotate_pieces_helper(pieces: list[Piece]) -> None:
@@ -41,10 +40,6 @@ class GrenightEnvironment:
         self.state_encoder = PiecePlaneEncoder(self.will_store_history_in_state)
 
         self.pieces = None
-        self.previous_pieces_encoded_q = PreviousPiecesEncodedQ(
-            PREVIOUS_K_STEPS_IN_STATE if self.will_store_history_in_state
-            else 0
-        )
 
         self.is_white_on_turn = True
         self.done = False
@@ -72,7 +67,6 @@ class GrenightEnvironment:
 
     def reset(self) -> np.ndarray:
         self.pieces = create_initial_board()
-        self.previous_pieces_encoded_q.queue.clear()
         self.is_white_on_turn = True
         self.done = False
         self.steps_without_pawn_move_or_capture = 0
@@ -88,7 +82,6 @@ class GrenightEnvironment:
         self.position_counts[key] = self.current_repetition_count
 
         state = self.get_state()
-        self.previous_pieces_encoded_q.push(state[-13:-3])
         self._state_cache = state
         return state
 
@@ -97,7 +90,6 @@ class GrenightEnvironment:
             return self._state_cache
 
         return self.state_encoder.encode_planes(
-            previous_pieces_encoded_q=self.previous_pieces_encoded_q,
             pieces=self.pieces,
             current_player_is_white=self.is_white_on_turn,
             steps_without_progress=self.steps_without_pawn_move_or_capture,
@@ -251,7 +243,6 @@ class GrenightEnvironment:
 
         if self.is_canonical_version and not self.is_white_on_turn and not self.done:
             rotate_pieces_helper(self.pieces)
-            self.previous_pieces_encoded_q.rotate()
 
         self.is_white_on_turn = not self.is_white_on_turn
         self.done = response.is_game_finished
@@ -267,7 +258,6 @@ class GrenightEnvironment:
 
             if self.is_canonical_version and not self.is_white_on_turn:
                 rotate_pieces_helper(self.pieces)
-                self.previous_pieces_encoded_q.rotate()
 
             if self.steps_without_pawn_move_or_capture >= MAX_STEPS_WITHOUT_PROGRESS:
                 self.done = True
@@ -297,7 +287,6 @@ class GrenightEnvironment:
         reward = self.calculate_reward_registry(response, phi_after, phi_before)
 
         next_state = self.get_state()
-        self.previous_pieces_encoded_q.push(next_state[-13:-3])
 
         self._state_cache = next_state
 

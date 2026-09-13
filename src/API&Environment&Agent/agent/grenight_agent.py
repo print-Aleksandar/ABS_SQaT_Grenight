@@ -26,13 +26,13 @@ class GrenightAgent:
                  columns: int,
                  num_actions: int,
                  device: str|None="cpu",
-                 is_bulk_update: bool|None=True) -> None:
+                 will_do_bulk_update: bool | None=True) -> None:
 
         self.is_self_play = is_self_play
         self.is_double_net = is_double_net
         self.is_dueling_net = is_dueling_net
         self.is_residual_net = is_residual_net
-        self.is_bulk_update = is_bulk_update
+        self.will_do_bulk_update = will_do_bulk_update
 
         self.device = torch.device(device)
         self.num_actions = num_actions
@@ -117,7 +117,7 @@ class GrenightAgent:
         if not self.is_double_net:
             return None
 
-        return self.bulk_update() if self.is_bulk_update else self.soft_update()
+        return self.bulk_update() if self.will_do_bulk_update else self.soft_update()
 
     def bulk_update(self) -> None:
         if not self.is_double_net:

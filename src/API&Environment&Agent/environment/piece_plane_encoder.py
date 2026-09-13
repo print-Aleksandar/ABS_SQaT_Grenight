@@ -1,13 +1,11 @@
 import numpy as np
 from domain.pieces import Piece, PIECES_NUMBERS
-from domain.configs import ROWS, COLUMNS, PREVIOUS_K_STEPS_IN_STATE
-from environment.previous_pieces_encoded_q import PreviousPiecesEncodedQ
+from domain.configs import ROWS, COLUMNS
 
 
 class PiecePlaneEncoder:
 
-    NUM_PLANES_ONLY_CURRENT = 12
-    NUM_PLANES_HISTORICAL = (10 * PREVIOUS_K_STEPS_IN_STATE) + NUM_PLANES_ONLY_CURRENT
+    NUM_PLANES = 12
 
     WHITE_PIECES_PLANE = 8
     BLACK_PIECES_PLANE = 9
@@ -19,16 +17,12 @@ class PiecePlaneEncoder:
 
         self.will_store_history_in_state = will_store_history_in_state
 
-        self.num_planes = (
-            self.NUM_PLANES_HISTORICAL if self.will_store_history_in_state
-            else self.NUM_PLANES_ONLY_CURRENT
-        )
+        self.num_planes = self.NUM_PLANES
 
         self.no_progress_plane = self.num_planes - 2
         self.repetition_plane = self.num_planes - 1
 
-    def encode_planes(self, previous_pieces_encoded_q: PreviousPiecesEncodedQ,
-                      pieces: list[Piece],
+    def encode_planes(self, pieces: list[Piece],
                       current_player_is_white: bool,
                       steps_without_progress: int = 0,
                       max_steps_without_progress: int = 1,
@@ -44,10 +38,6 @@ class PiecePlaneEncoder:
         state[self.repetition_plane, :, :] = min(
             repetition_count / repetition_limit, 1.0
         )
-
-        for i, previous_pieces_encoded in enumerate(previous_pieces_encoded_q.queue):
-            j = PREVIOUS_K_STEPS_IN_STATE - i - 1
-            state[j * 10 : (j + 1) * 10, : :] = previous_pieces_encoded
 
         for piece in pieces:
             y, x = piece.position

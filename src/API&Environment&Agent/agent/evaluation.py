@@ -205,6 +205,22 @@ def process_stats(outcomes: Counter,
         else:
             label += " (agent=black vs random)"
 
+    stalemate_pct = (
+        100 * draw_reasons.get("stalemate", 0) / outcomes.get("draw", 1)
+    )
+
+    threefold_repetition_pct = (
+        100 * draw_reasons.get("threefold_repetition", 0) / outcomes.get("draw", 1)
+    )
+
+    insufficient_material_pct = (
+        100 * draw_reasons.get("insufficient_material", 0) / outcomes.get("draw", 1)
+    )
+
+    max_steps_without_progress_pct = (
+        100 * draw_reasons.get("max_steps_without_progress", 0) / outcomes.get("draw", 1)
+    )
+
     print()
 
     if is_training_stats:
@@ -214,21 +230,25 @@ def process_stats(outcomes: Counter,
 
 
     print(
-        f"  outcomes    "
+        f"  outcomes     "
         f"white {win_pct:5.1f}%   "
         f"black {black_pct:5.1f}%   "
         f"draw {draw_pct:5.1f}%   "
         f"truncated {truncated_pct:5.1f}%"
     )
 
-    print(f"  distribution {dict(outcomes)}")
+    print(
+        f"  draw_reasons  "
+        f"threefold_repetition {threefold_repetition_pct:5.1f}%   "
+        f"stalemate {stalemate_pct:5.1f}%   "
+        f"insufficient_material {insufficient_material_pct:5.1f}%   "
+        f"max_steps_without_progress {max_steps_without_progress_pct:5.1f}%   "
+    )
 
-    print(f"  draw reasons {dict(draw_reasons)}")
-
-    print(f"  average moves per game: {(total_moves / n):5.1f}")
+    print(f"  average env moves per game: {(total_moves / n):5.1f}")
 
     print(
-        f"  agent       "
+        f"  agent       "        
         f"loss {avg_loss:10.8f}   "
         f"registered Q avg {np.mean(q_averages):8.4f}   "
         f"registered Q max {np.mean(q_maxs):8.4f}   "

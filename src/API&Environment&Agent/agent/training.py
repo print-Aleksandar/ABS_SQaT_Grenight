@@ -219,7 +219,7 @@ def train_agent(is_self_play: bool,
         is_double_net=is_double_net,
         is_dueling_net=is_dueling_net,
         is_residual_net=is_residual_net,
-        is_bulk_update=True,
+        will_do_bulk_update=False,
         rows=ROWS,
         columns=COLUMNS,
         num_actions=env.action_encoder.num_actions,
@@ -292,6 +292,8 @@ def train_agent(is_self_play: bool,
                 print()
 
                 recent_outcomes.clear()
+                draw_reasons.clear()
+                total_moves = 0
                 q_averages, q_maxs, q_mins = [], [], []
 
     except KeyboardInterrupt:
@@ -302,4 +304,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, False, True, False, True)
+train_agent(False, False, False, False, False, False)
