@@ -204,7 +204,7 @@ class GrenightAgent:
             else:
                 target = rewards + (self.gamma * self.gamma) * next_q_value
 
-            if self.train_steps in {498, 600, 800, 999, 1011}:
+            if self.train_steps % 500 == 0:
                 print(self.train_steps, flush=True)
                 for name, mask in [
                     ("terminal", dones.bool()),
