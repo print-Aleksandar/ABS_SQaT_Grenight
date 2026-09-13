@@ -204,8 +204,8 @@ class GrenightAgent:
             else:
                 target = rewards + (self.gamma * self.gamma) * next_q_value
 
-            if self.train_steps in {1, 100, 500, 1000, 2000, 5000}:
-
+            if self.train_steps in {498, 600, 800, 999, 1011}:
+                print(self.train_steps, flush=True)
                 for name, mask in [
                     ("terminal", dones.bool()),
                     ("nonterminal", ~dones.bool()),
@@ -217,6 +217,7 @@ class GrenightAgent:
                             "reward=", rewards[mask].mean().item(),
                             "target=", target[mask].mean().item(),
                             "next_q=", next_q_value[mask].mean().item(),
+                            flush=True
                         )
 
                 print(
@@ -224,8 +225,24 @@ class GrenightAgent:
                     {
                         float(x): int((rewards == x).sum())
                         for x in torch.unique(rewards).cpu()
-                    }
+                    }, flush=True
                 )
+
+                terminal_mask = dones.bool()
+
+                if terminal_mask.any():
+                    print(
+                        "TERMINAL REWARDS:",
+                        rewards[terminal_mask].detach().cpu().tolist()
+                    )
+
+                nonterminal_mask = ~dones.bool()
+
+                if nonterminal_mask.any():
+                    print(
+                        "NONTERMINAL REWARDS:",
+                        rewards[nonterminal_mask].detach().cpu().tolist()
+                    )
 
         loss = self.loss_fn(q_values, target)
 
