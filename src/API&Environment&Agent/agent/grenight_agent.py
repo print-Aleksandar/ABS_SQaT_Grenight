@@ -204,6 +204,29 @@ class GrenightAgent:
             else:
                 target = rewards + (self.gamma * self.gamma) * next_q_value
 
+            if self.train_steps in {1, 100, 500, 1000, 2000, 5000}:
+
+                for name, mask in [
+                    ("terminal", dones.bool()),
+                    ("nonterminal", ~dones.bool()),
+                ]:
+                    if mask.any():
+                        print(
+                            name,
+                            "n=", mask.sum().item(),
+                            "reward=", rewards[mask].mean().item(),
+                            "target=", target[mask].mean().item(),
+                            "next_q=", next_q_value[mask].mean().item(),
+                        )
+
+                print(
+                    "reward distribution:",
+                    {
+                        float(x): int((rewards == x).sum())
+                        for x in torch.unique(rewards).cpu()
+                    }
+                )
+
         loss = self.loss_fn(q_values, target)
 
         self.optimizer.zero_grad()
