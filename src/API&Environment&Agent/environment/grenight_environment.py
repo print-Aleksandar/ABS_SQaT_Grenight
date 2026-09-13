@@ -29,15 +29,13 @@ class GrenightEnvironment:
     THREEFOLD_REPETITION_RULE_VALUE = 0.0
 
     def __init__(self, is_canonical_version: bool,
-                 will_store_history_in_state: bool,
                  will_do_reward_shaping: bool) -> None:
 
         self.is_canonical_version = is_canonical_version
-        self.will_store_history_in_state = will_store_history_in_state
         self.will_do_reward_shaping = will_do_reward_shaping
 
         self.action_encoder = ActionEncoder(self.is_canonical_version)
-        self.state_encoder = PiecePlaneEncoder(self.will_store_history_in_state)
+        self.state_encoder = PiecePlaneEncoder()
 
         self.pieces = None
 

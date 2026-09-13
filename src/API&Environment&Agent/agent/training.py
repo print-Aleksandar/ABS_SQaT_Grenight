@@ -34,7 +34,7 @@ def epsilon_at(step: int) -> float:
 def save_checkpoint(agent: GrenightAgent,
                     ep: int, agent_step: int,
                     is_double_net: bool) -> None:
-    path = os.path.join(CHECKPOINT_DIR, f"current_implementation_ep{ep}.pt")
+    path = os.path.join(CHECKPOINT_DIR, f"curr_impl_ep{ep}.pt")
 
     if is_double_net:
         torch.save({
@@ -210,7 +210,6 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        will_store_history_in_state=False,
         will_do_reward_shaping=will_do_reward_shaping
     )
 
@@ -304,4 +303,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, False, False, False, False)
+train_agent(False, False, False, False, False, False)

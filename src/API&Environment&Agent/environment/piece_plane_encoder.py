@@ -13,10 +13,7 @@ class PiecePlaneEncoder:
     PAWN, ROOK, QUEEN = 0, 1, 2
     PIECE_VALUES = {PAWN: 0.02, ROOK: 0.1, QUEEN: 0.18}
 
-    def __init__(self, will_store_history_in_state: bool) -> None:
-
-        self.will_store_history_in_state = will_store_history_in_state
-
+    def __init__(self) -> None:
         self.num_planes = self.NUM_PLANES
 
         self.no_progress_plane = self.num_planes - 2

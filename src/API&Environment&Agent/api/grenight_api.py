@@ -161,7 +161,6 @@ def agent_move(request_arg: AgentMoveRequestDTO) -> MoveResponseDTO:
 
 
 env = GrenightEnvironment(is_canonical_version=False,
-                          will_store_history_in_state=False,
                           will_do_reward_shaping=False)
 
 agent = GrenightAgent(
