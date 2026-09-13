@@ -12,7 +12,7 @@ from domain.configs import (
     SOFT_UPDATE_TAU,
 )
 from agent.network import Network
-from agent.replay_buffer import ReplayBuffer
+from agent.prioritized_replay_buffer import PrioritizedReplayBuffer
 
 
 class GrenightAgent:
@@ -56,7 +56,7 @@ class GrenightAgent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=LEARNING_RATE)
         self.loss_fn = nn.SmoothL1Loss()
 
-        self.replay_buffer = ReplayBuffer(BUFFER_CAPACITY)
+        self.replay_buffer = PrioritizedReplayBuffer(BUFFER_CAPACITY)
 
         self.train_steps = 0
 
@@ -173,7 +173,7 @@ class GrenightAgent:
         if len(self.replay_buffer) < self.replay_warmup:
             return None
 
-        batch = self.replay_buffer.sample(self.batch_size)
+        batch, indices, weights = self.replay_buffer.sample(self.batch_size)
 
         states = torch.from_numpy(np.stack([t.state for t in batch])).to(self.device)
         masks = (
@@ -204,7 +204,17 @@ class GrenightAgent:
             else:
                 target = rewards + (self.gamma * self.gamma) * next_q_value
 
-        loss = self.loss_fn(q_values, target)
+        td_error = target - q_values
+
+        losses = nn.functional.smooth_l1_loss(
+            q_values,
+            target,
+            reduction="none",
+        )
+
+        weights_t = torch.from_numpy(weights).to(self.device)
+
+        loss = (losses * weights_t).mean()
 
         self.optimizer.zero_grad()
 
@@ -216,6 +226,8 @@ class GrenightAgent:
         )
 
         self.optimizer.step()
+
+        self.replay_buffer.update_priorities(indices, td_error.detach().abs().cpu().numpy())
 
         self.train_steps += 1
 
