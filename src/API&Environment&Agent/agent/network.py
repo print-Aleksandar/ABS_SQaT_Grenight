@@ -7,6 +7,7 @@ def conv_block(in_channels: int, out_channels: int) -> nn.Sequential:
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
         nn.GroupNorm(8, out_channels),
+        nn.SiLU()
     )
 
 class ResidualBlock(nn.Module):
@@ -67,12 +68,14 @@ class Network(nn.Module):
         self.shared = nn.Sequential(
             nn.Flatten(),
             nn.Linear(NUM_CHANNELS * rows * columns, 256),
+            nn.LayerNorm(256),
             nn.SiLU()
         )
 
         if self.is_dueling_net:
             self.value = nn.Sequential(
                 nn.Linear(256, 128),
+                nn.LayerNorm(128),
                 nn.SiLU(),
                 nn.Linear(128, 1),
                 nn.LayerNorm(1)
@@ -80,6 +83,7 @@ class Network(nn.Module):
 
             self.advantage = nn.Sequential(
                 nn.Linear(256, 128),
+                nn.LayerNorm(128),
                 nn.SiLU(),
                 nn.Linear(128, num_actions)
             )
@@ -89,6 +93,7 @@ class Network(nn.Module):
         else:
             self.head = nn.Sequential(
                 nn.Linear(256, 128),
+                nn.LayerNorm(128),
                 nn.SiLU(),
                 nn.Linear(128, num_actions)
             )
