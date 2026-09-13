@@ -1,6 +1,6 @@
 from domain.pieces import Piece
 from domain.exceptions import NonExistentValidMoveException, PiecePinnedException
-from domain.requests import MoveRequest, ValidMovesPieceRequest, AgentMoveRequest
+from domain.requests import MoveRequest, ValidMovesPieceRequest, ValidMovesPiecesRequest
 from domain.responses import MoveResponse, ValidMovesPieceResponse
 from application.board_getter import all_per_move_getter, BoardGetter
 from application.filters import filter_valid_attacks, filter_initial_moves
@@ -126,7 +126,7 @@ def gather_valid_moves_piece(request: ValidMovesPieceRequest) -> ValidMovesPiece
     return ValidMovesPieceResponse(request.uid, positions)
 
 
-def gather_valid_moves_player(request: AgentMoveRequest) -> dict[str, list[tuple[int, int]]]:
+def gather_valid_moves_player(request: ValidMovesPiecesRequest) -> dict[str, list[tuple[int, int]]]:
     dummy = all_per_move_getter(request.pieces)
     board_getter = BoardGetter(dummy)
 

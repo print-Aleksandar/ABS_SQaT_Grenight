@@ -1,46 +1,13 @@
 from collections import Counter
-from pathlib import Path
 import numpy as np
-import torch
-from domain.configs import MAX_STEPS_PER_EPISODE, LOG_EVERY_EPISODE, EVALUATE_GAMES, DISCOUNT_FACTOR_GAMMA, ROWS, \
-    COLUMNS
-from environment.action_encoder import ActionEncoder
+from domain.configs import (
+    MAX_STEPS_PER_EPISODE,
+    LOG_EVERY_EPISODE,
+    EVALUATE_GAMES,
+    DISCOUNT_FACTOR_GAMMA
+)
 from environment.grenight_environment import GrenightEnvironment
 from agent.grenight_agent import GrenightAgent
-from environment.piece_plane_encoder import PiecePlaneEncoder
-
-
-agent_tester = GrenightAgent(
-    is_self_play=False,
-    is_double_net=True,
-    is_dueling_net=True,
-    is_residual_net=True,
-    is_bulk_update=False,
-    rows=ROWS,
-    columns=COLUMNS,
-    num_actions=ActionEncoder(is_canonical_version=False).num_actions,
-    num_planes=PiecePlaneEncoder.NUM_PLANES_ONLY_CURRENT,
-    device="cuda" if torch.cuda.is_available() else "cpu"
-)
-
-
-def load_checkpoint(agent: GrenightAgent,
-                    is_double_net: bool) -> None:
-
-    current_dir = Path(__file__).resolve().parent
-    checkpoint_path = current_dir / "implementations/ver50/p_111000/current_implementation_ep8000.pt"
-
-    checkpoint = torch.load(
-        checkpoint_path,
-        map_location="cuda" if torch.cuda.is_available() else "cpu",
-        weights_only=False
-    )
-
-    agent.policy_net.load_state_dict(checkpoint["policy_state_dict"])
-    if is_double_net:
-        agent.target_net.load_state_dict(checkpoint["target_state_dict"])
-
-load_checkpoint(agent_tester, True)
 
 
 def evaluate_agent_by_all_combos(env: GrenightEnvironment,
@@ -48,93 +15,9 @@ def evaluate_agent_by_all_combos(env: GrenightEnvironment,
                                  is_self_play: bool) -> None:
 
     evaluate_agent(env, agent, is_self_play,True, False)
-    # evaluate_again_against_test_agent(env, agent, agent_tester, True)
 
     if is_self_play:
         evaluate_agent(env, agent, is_self_play,False, True)
-        # evaluate_again_against_test_agent(env, agent, agent_tester, False)
-
-
-def evaluate_again_against_test_agent(env_arg: GrenightEnvironment,
-                                      agent_to_test: GrenightAgent,
-                                      agent_tester: GrenightAgent,
-                                      is_agent_to_test_white: bool) -> None:
-
-    outcomes = Counter()
-    for _ in range(EVALUATE_GAMES):
-        env_arg.reset()
-        done = False
-        is_draw = False
-        is_white_on_turn = True
-        move_count = 0
-
-        while not done and move_count < MAX_STEPS_PER_EPISODE:
-            is_white_on_turn = env_arg.is_white_on_turn
-
-            if is_white_on_turn == is_agent_to_test_white:
-                action = agent_to_test.select_action(env_arg.get_state(), env_arg.action_mask(), 0.05)
-            else:
-                env_arg.action_encoder = ActionEncoder(is_canonical_version=False)
-                action = agent_tester.select_action(env_arg.get_state(), env_arg.action_mask(), 0.05)
-                env_arg.action_encoder = ActionEncoder(is_canonical_version=True)
-
-            _, _, done, is_draw, _ = env_arg.step(action)
-
-            move_count += 1
-
-        if not done:
-            outcomes["truncated"] += 1
-        elif is_draw:
-            outcomes["draw"] += 1
-        else:
-            outcomes["white_win" if is_white_on_turn else "black_win"] += 1
-
-    completed = (
-            outcomes.get("white_win", 0)
-            + outcomes.get("black_win", 0)
-            + outcomes.get("draw", 0)
-    )
-
-    total_episodes = completed + outcomes.get("truncated", 0)
-
-    win_pct = (
-        100.0 * outcomes.get("white_win", 0) / completed
-        if completed > 0 else 0.0
-    )
-
-    black_pct = (
-        100.0 * outcomes.get("black_win", 0) / completed
-        if completed > 0 else 0.0
-    )
-
-    draw_pct = (
-        100.0 * outcomes.get("draw", 0) / completed
-        if completed > 0 else 0.0
-    )
-
-    truncated_pct = (
-        100.0 * outcomes.get("truncated", 0) / total_episodes
-        if total_episodes > 0 else 0.0
-    )
-
-    if is_agent_to_test_white:
-        label = "(self_play_agent=white vs fixed_res_dueling_ddqn_checkpoint=black)"
-    else:
-        label = "(self_play_agent=black vs fixed_res_dueling_ddqn_checkpoint=white)"
-
-    print()
-
-    print(f"evaluation {label} statistics — another new {EVALUATE_GAMES:,} games")
-
-    print(
-        f"  outcomes    "
-        f"white {win_pct:5.1f}%   "
-        f"black {black_pct:5.1f}%   "
-        f"draw {draw_pct:5.1f}%   "
-        f"truncated {truncated_pct:5.1f}%"
-    )
-
-    print(f"  distribution {dict(outcomes)}")
 
 
 def evaluate_agent(env: GrenightEnvironment,
@@ -150,6 +33,8 @@ def evaluate_agent(env: GrenightEnvironment,
 
     eval_losses = []
     recent_outcomes = Counter()
+    draw_reasons = Counter()
+    total_moves = 0
     q_averages, q_maxs, q_mins = [], [], []
     td_target_values, td_abs_values = [], []
 
@@ -158,6 +43,7 @@ def evaluate_agent(env: GrenightEnvironment,
         done = False
         is_draw = False
         is_white_on_turn = True
+        info = None
         move_count = 0
 
         while not done and move_count < MAX_STEPS_PER_EPISODE:
@@ -170,7 +56,7 @@ def evaluate_agent(env: GrenightEnvironment,
             else:
                 white_action = env.sample()
 
-            black_old_state, white_reward, done, is_draw, _ = env.step(white_action)
+            black_old_state, white_reward, done, is_draw, info = env.step(white_action)
             move_count += 1
 
             if is_agent_playing_for_white:
@@ -192,7 +78,7 @@ def evaluate_agent(env: GrenightEnvironment,
                     black_action = env.sample()
 
                 is_white_on_turn = False
-                white_new_state, black_reward, done, is_draw, _ = env.step(black_action)
+                white_new_state, black_reward, done, is_draw, info = env.step(black_action)
                 move_count += 1
 
                 if is_self_play and is_agent_playing_for_black:
@@ -243,17 +129,26 @@ def evaluate_agent(env: GrenightEnvironment,
                         td_abs_values.append(agent.last_td_abs)
 
         if not done:
-            recent_outcomes["truncated"] += 1
-        elif is_draw:
-            recent_outcomes["draw"] += 1
+            outcome = "truncated"
         else:
-            recent_outcomes["white_win" if is_white_on_turn else "black_win"] += 1
+            if is_draw:
+                outcome = "draw"
+            else:
+                outcome = "white_win" if is_white_on_turn else "black_win"
 
-    process_stats(recent_outcomes, eval_losses, q_averages, q_maxs, q_mins, False,
+        recent_outcomes[outcome] += 1
+        total_moves += move_count
+        if info["draw_reason"] is not None:
+            draw_reasons[info["draw_reason"]] += 1
+
+    process_stats(recent_outcomes, draw_reasons, total_moves, eval_losses, q_averages, q_maxs, q_mins, False,
                   is_agent_playing_for_white, is_agent_playing_for_black,
                   td_target_values, td_abs_values)
 
+
 def process_stats(outcomes: Counter,
+                  draw_reasons: Counter,
+                  total_moves: int,
                   losses: list[float],
                   q_averages: list[float],
                   q_maxs: list[float],
@@ -328,24 +223,28 @@ def process_stats(outcomes: Counter,
 
     print(f"  distribution {dict(outcomes)}")
 
+    print(f"  draw reasons {dict(draw_reasons)}")
+
+    print(f"  average moves per game: {(total_moves / n):5.1f}")
+
     print(
         f"  agent       "
         f"loss {avg_loss:10.8f}   "
-        f"Q avg {np.mean(q_averages):8.4f}   "
-        f"Q max {np.mean(q_maxs):8.4f}   "
-        f"Q min {np.mean(q_mins):8.4f}"
+        f"registered Q avg {np.mean(q_averages):8.4f}   "
+        f"registered Q max {np.mean(q_maxs):8.4f}   "
+        f"registered Q min {np.mean(q_mins):8.4f}"
     )
 
     if not is_training_stats:
         print(
             f"  diagnostics "
-            f"target avg {np.mean(td_target_values):8.4f}   "
-            f"target max {np.max(td_target_values):8.4f}   "
-            f"target min {np.min(td_target_values):8.4f}"
+            f"registered target avg {np.mean(td_target_values):8.4f}   "
+            f"registered target max {np.max(td_target_values):8.4f}   "
+            f"registered target min {np.min(td_target_values):8.4f}"
         )
 
         print(
             f"              "
-            f"|TD| avg {np.mean(td_abs_values):8.4f}   "
-            f"|TD| max {np.max(td_abs_values):8.4f}"
+            f"registered |TD| avg {np.mean(td_abs_values):8.4f}   "
+            f"registered |TD| max {np.max(td_abs_values):8.4f}"
         )

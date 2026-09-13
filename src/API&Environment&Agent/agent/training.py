@@ -1,5 +1,5 @@
 import os
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 import torch
 from agent.evaluation import process_stats, evaluate_agent_by_all_combos
@@ -84,13 +84,14 @@ def load_checkpoint(agent: GrenightAgent,
 
 def train_self_play_episode(env: GrenightEnvironment, agent: GrenightAgent,
                             agent_step: int, losses: list[float], q_averages: list[float],
-                            q_maxs: list[float], q_mins: list[float]) -> tuple[bool, bool, bool, int]:
+                            q_maxs: list[float], q_mins: list[float]) -> tuple[bool, bool, bool, int, dict, int]:
 
     state = env.reset()
     done = False
     is_draw = False
     is_white_on_turn = True
     move_count = 0
+    info = None
 
     while not done and move_count < MAX_STEPS_PER_EPISODE:
         is_white_on_turn = env.is_white_on_turn
@@ -99,15 +100,13 @@ def train_self_play_episode(env: GrenightEnvironment, agent: GrenightAgent,
         legal_mask = env.action_mask()
 
         action = agent.select_action(state, legal_mask, epsilon)
-        new_state, reward, done, is_draw, _ = env.step(action)
+        new_state, reward, done, is_draw, info = env.step(action)
         agent_step += 1
 
         next_legal_mask = env.action_mask()
         agent.store(state, legal_mask, action, reward, new_state, done, next_legal_mask)
 
-        loss = None
-        if agent_step % 4 == 0:
-            loss = agent.train_step()
+        loss = agent.train_step()
         if loss is not None:
             losses.append(loss)
 
@@ -121,18 +120,19 @@ def train_self_play_episode(env: GrenightEnvironment, agent: GrenightAgent,
         state = new_state
         move_count += 1
 
-    return done, is_draw, is_white_on_turn, agent_step
+    return done, is_draw, is_white_on_turn, agent_step, info, move_count
 
 
 def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
                             agent_step: int, losses: list[float], q_averages: list[float],
-                            q_maxs: list[float], q_mins: list[float]) -> tuple[bool, bool, bool, int]:
+                            q_maxs: list[float], q_mins: list[float]) -> tuple[bool, bool, bool, int, dict, int]:
 
     state = env.reset()
     done = False
     is_draw = False
     is_white_on_turn = True
     move_count = 0
+    info = None
 
     while not done and move_count < MAX_STEPS_PER_EPISODE:
         is_white_on_turn = True
@@ -179,14 +179,13 @@ def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
             q_mins.append(agent.last_min_legal_q)
             q_maxs.append(agent.last_max_legal_q)
 
-        if agent_step % 2 == 0:
-            loss = agent.train_step()
-            if loss is not None:
-                losses.append(loss)
+        loss = agent.train_step()
+        if loss is not None:
+            losses.append(loss)
 
         state = env.get_state()
 
-    return done, is_draw, is_white_on_turn, agent_step
+    return done, is_draw, is_white_on_turn, agent_step, info, move_count
 
 
 def train_agent(is_self_play: bool,
@@ -194,7 +193,6 @@ def train_agent(is_self_play: bool,
                 is_dueling_net: bool,
                 is_residual_net: bool,
                 is_canonical_version: bool,
-                will_store_history_in_state: bool,
                 will_do_reward_shaping: bool) -> None:
 
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
@@ -208,12 +206,11 @@ def train_agent(is_self_play: bool,
           f"is dueling net                   : {is_dueling_net}\n"
           f"is residual net                  : {is_residual_net}\n"
           f"is canonical version             : {is_canonical_version}\n"
-          f"will store history in state      : {will_store_history_in_state}\n"
           f"will do reward shaping           : {will_do_reward_shaping}\n")
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        will_store_history_in_state=will_store_history_in_state,
+        will_store_history_in_state=False,
         will_do_reward_shaping=will_do_reward_shaping
     )
 
@@ -237,29 +234,35 @@ def train_agent(is_self_play: bool,
 
     losses = []
     recent_outcomes = Counter()
+    draw_reasons = Counter()
+    total_moves = 0
     q_averages, q_maxs, q_mins = [], [], []
 
     try:
         for episode in range(episode_start, TRAIN_EPISODES + 1):
 
             if is_self_play:
-                done, is_draw, is_white_on_turn, agent_step = train_self_play_episode(
+                done, is_draw, is_white_on_turn, agent_step, info, move_count = train_self_play_episode(
                     env, agent, agent_step, losses, q_averages, q_maxs, q_mins
                 )
 
             else:
-                done, is_draw, is_white_on_turn, agent_step = train_vs_random_episode(
+                done, is_draw, is_white_on_turn, agent_step, info, move_count = train_vs_random_episode(
                     env, agent, agent_step, losses, q_averages, q_maxs, q_mins
                 )
 
             if not done:
-                recent_outcomes["truncated"] += 1
-
+                outcome = "truncated"
             else:
                 if is_draw:
-                    recent_outcomes["draw"] += 1
+                    outcome = "draw"
                 else:
-                    recent_outcomes["white_win" if is_white_on_turn else "black_win"] += 1
+                    outcome = "white_win" if is_white_on_turn else "black_win"
+
+            recent_outcomes[outcome] += 1
+            total_moves += move_count
+            if info["draw_reason"] is not None:
+                draw_reasons[info["draw_reason"]] += 1
 
             if episode % CHECKPOINT_EVERY_EPISODES == 0:
                 save_checkpoint(agent, episode, agent_step, is_double_net)
@@ -277,7 +280,7 @@ def train_agent(is_self_play: bool,
 
                 print()
 
-                process_stats(recent_outcomes, losses, q_averages, q_maxs, q_mins,True, True, is_self_play)
+                process_stats(recent_outcomes, draw_reasons, total_moves, losses, q_averages, q_maxs, q_mins,True, True, is_self_play)
 
                 print()
 
@@ -299,4 +302,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(True, True, True, True, True, False, False)
+train_agent(False, True, False, True, False, True)

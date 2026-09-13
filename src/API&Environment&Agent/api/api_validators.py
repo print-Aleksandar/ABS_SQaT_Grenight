@@ -1,4 +1,4 @@
-from domain.requests import MoveRequest, ValidMovesPieceRequest, AgentMoveRequest
+from domain.requests import MoveRequest, ValidMovesPieceRequest, ValidMovesPiecesRequest
 from domain.board_initialization import POSITIONS
 from application.board_getter import get_piece_by_uid
 from domain.exceptions import (NonExistentValidPieceWithUidException,
@@ -47,7 +47,7 @@ def player_wants_to_gather_valid_moves_for_enemy_piece_exception(request: ValidM
         raise PlayerWantsToGatherValidMovesForEnemyPieceException()
 
 # AGENT:
-def agent_not_on_turn_exception(request: AgentMoveRequest) -> None:
+def agent_not_on_turn_exception(request: ValidMovesPiecesRequest) -> None:
 
     if request.is_for_white != request.is_for_white_turn:
         raise AgentNotOnTurnException()

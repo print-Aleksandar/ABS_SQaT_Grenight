@@ -5,31 +5,33 @@ from domain.configs import NUM_CHANNELS, NUM_BLOCKS
 
 def conv_block(in_channels: int, out_channels: int) -> nn.Sequential:
     return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
-        nn.GroupNorm(num_groups=8, num_channels=out_channels),
-        nn.LeakyReLU(0.1)
+        nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
+        nn.GroupNorm(8, out_channels),
     )
 
-
 class ResidualBlock(nn.Module):
-
     def __init__(self, channels: int) -> None:
+
         super().__init__()
 
-        self.block1 = conv_block(channels, channels)
-        self.block2 = conv_block(channels, channels)
-        self.act = nn.LeakyReLU(0.1)
+        self.block1 = nn.Sequential(
+            nn.Conv2d(channels, channels, 3, padding=1, bias=False),
+            nn.GroupNorm(8, channels),
+            nn.SiLU()
+        )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        self.block2 = nn.Sequential(
+            nn.Conv2d(channels, channels, 3, padding=1, bias=False),
+            nn.GroupNorm(8, channels)
+        )
+
+        self.act = nn.SiLU()
+
+    def forward(self, x) -> torch.Tensor:
         residual = x
-
         x = self.block1(x)
         x = self.block2(x)
-
-        x = x + residual
-        x = self.act(x)
-
-        return x
+        return self.act(x + residual)
 
 
 class Network(nn.Module):
@@ -62,34 +64,33 @@ class Network(nn.Module):
                 conv_block(NUM_CHANNELS, NUM_CHANNELS)
             )
 
-        flat_size = NUM_CHANNELS * rows * columns
-
         self.shared = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(flat_size, 1024),
-            nn.LeakyReLU(0.1)
+            nn.Linear(NUM_CHANNELS * rows * columns, 256),
+            nn.SiLU()
         )
 
         if self.is_dueling_net:
             self.value = nn.Sequential(
-                nn.Linear(1024, 512),
-                nn.LeakyReLU(0.1),
-                nn.Linear(512, 1)
+                nn.Linear(256, 128),
+                nn.SiLU(),
+                nn.Linear(128, 1),
+                nn.LayerNorm(1)
             )
 
             self.advantage = nn.Sequential(
-                nn.Linear(1024, 512),
-                nn.LeakyReLU(0.1),
-                nn.Linear(512, num_actions)
+                nn.Linear(256, 128),
+                nn.SiLU(),
+                nn.Linear(128, num_actions)
             )
 
             self.head = None
 
         else:
             self.head = nn.Sequential(
-                nn.Linear(1024, 512),
-                nn.LeakyReLU(0.1),
-                nn.Linear(512, num_actions)
+                nn.Linear(256, 128),
+                nn.SiLU(),
+                nn.Linear(128, num_actions)
             )
 
             self.value = None

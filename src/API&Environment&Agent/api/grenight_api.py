@@ -4,8 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from agent.grenight_agent import GrenightAgent
 from domain.board_initialization import create_initial_board
-from domain.configs import COLUMNS, ROWS, MAX_STEPS_PER_EPISODE
-from domain.requests import MoveRequest, ValidMovesPieceRequest, AgentMoveRequest
+from domain.configs import COLUMNS, ROWS
+from domain.pieces import Piece
+from domain.requests import MoveRequest, ValidMovesPieceRequest, ValidMovesPiecesRequest
 from domain.dtos import (MoveRequestDTO, MoveResponseDTO,
                          ValidMovesPieceRequestDTO, ValidMovesPieceResponseDTO,
                          InitialBoardResponseDTO, get_piece_from_dto, get_dto_from_piece, AgentMoveRequestDTO)
@@ -124,7 +125,7 @@ def get_piece_valid_moves(request_arg: ValidMovesPieceRequestDTO) -> ValidMovesP
 @app.post("/api/agent_move")
 def agent_move(request_arg: AgentMoveRequestDTO) -> MoveResponseDTO:
 
-    request = AgentMoveRequest(
+    request = ValidMovesPiecesRequest(
         pieces=[get_piece_from_dto(piece_dto) for piece_dto in request_arg.pieces],
         is_for_white=request_arg.is_for_white,
         is_for_white_turn=request_arg.is_for_white,
@@ -143,7 +144,7 @@ def agent_move(request_arg: AgentMoveRequestDTO) -> MoveResponseDTO:
             raise HTTPException(status_code=409, detail=type(e).__name__)
 
     try:
-        response = agent_taking_action(request)
+        response = agent_taking_action(request.pieces)
 
     except GrenightException as e:
         raise HTTPException(status_code=409, detail=type(e).__name__)
@@ -184,14 +185,14 @@ if agent.is_double_net:
     agent.target_net.load_state_dict(checkpoint["target_state_dict"])
 
 
-def agent_taking_action(request: AgentMoveRequest) -> MoveResponse:
-    d1 = {p.uid: p.position for p in request.pieces}
+def agent_taking_action(pieces: list[Piece]) -> MoveResponse:
+    d1 = {p.uid: p.position for p in pieces}
     d2 = {p.uid: p.position for p in env.pieces}
 
     if d1 != d2:
-        env.load_pieces_absolute(request.pieces)
+        env.load_pieces_absolute(pieces)
 
-    action = agent.select_action(env.get_state(), env.action_mask(), 0.5)
+    action = agent.select_action(env.get_state(), env.action_mask(), 0.05)
     _, _, done, is_draw, _ = env.step(action)
 
     return MoveResponse(

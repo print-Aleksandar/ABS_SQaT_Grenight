@@ -1,7 +1,7 @@
 import numpy as np
 from domain.configs import MAX_STEPS_WITHOUT_PROGRESS, ROWS, PREVIOUS_K_STEPS_IN_STATE, DISCOUNT_FACTOR_GAMMA
 from domain.pieces import Piece, Pawn, PIECES_NUMBERS
-from domain.requests import MoveRequest, AgentMoveRequest
+from domain.requests import MoveRequest, ValidMovesPiecesRequest
 from domain.exceptions import GrenightException
 from domain.board_initialization import create_initial_board
 from application.game_service import make_move, gather_valid_moves_player
@@ -24,9 +24,9 @@ def rotate_pieces_helper(pieces: list[Piece]) -> None:
 class GrenightEnvironment:
 
     PAWN, ROOK, QUEEN = 0, 1, 2
-    PIECE_VALUES = {PAWN: 0.01, ROOK: 0.05, QUEEN: 0.09}
+    PIECE_VALUES = {PAWN: 0.02, ROOK: 0.1, QUEEN: 0.18}
 
-    OTHER_DRAWS = -0.3
+    OTHER_DRAWS = -1.0
     THREEFOLD_REPETITION_RULE_VALUE = 0.0
 
     def __init__(self, is_canonical_version: bool,
@@ -128,7 +128,7 @@ class GrenightEnvironment:
         if self.done:
             return []
 
-        request = AgentMoveRequest(
+        request = ValidMovesPiecesRequest(
             pieces=self.pieces,
             is_for_white=True if self.is_canonical_version else self.is_white_on_turn,
             is_for_white_turn=True if self.is_canonical_version else self.is_white_on_turn,
@@ -362,17 +362,16 @@ class GrenightEnvironment:
         return 1.0
 
     def calculate_reward_with_shaping(self, response, phi_after, phi_before) -> float:
-        if not self.done:
-            return DISCOUNT_FACTOR_GAMMA * phi_after - phi_before
+        potential_bonus_reward = DISCOUNT_FACTOR_GAMMA * phi_after - phi_before
 
         if self.is_draw_by_rule or response.is_draw:
             if self.draw_reason == "threefold_repetition":
                 if self.is_better_to_force_threefold_repetition():
-                    return self.THREEFOLD_REPETITION_RULE_VALUE
+                    return self.THREEFOLD_REPETITION_RULE_VALUE + potential_bonus_reward
                 else:
-                    return self.OTHER_DRAWS
+                    return self.OTHER_DRAWS + potential_bonus_reward
             else:
-                return self.OTHER_DRAWS
+                return self.OTHER_DRAWS + potential_bonus_reward
 
         else:
-            return 1.0
+            return 1.0 + potential_bonus_reward

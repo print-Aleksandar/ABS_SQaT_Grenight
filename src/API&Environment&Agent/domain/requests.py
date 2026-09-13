@@ -31,7 +31,7 @@ class ValidMovesPieceRequest:
         self.is_white_on_turn = is_white_on_turn
 
 
-class AgentMoveRequest:
+class ValidMovesPiecesRequest:
     def __init__(self, pieces: list[Piece],
                  is_for_white: bool,
                  is_for_white_turn: bool,
