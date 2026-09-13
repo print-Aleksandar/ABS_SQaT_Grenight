@@ -79,9 +79,7 @@ class PrioritizedReplayBuffer:
 
     def update_priorities(self, indices: np.ndarray, priorities: np.ndarray) -> None:
         priorities = np.asarray(priorities, dtype=np.float32)
-
-        priorities = np.abs(priorities) + self.epsilon
-
+        priorities = np.clip(priorities + self.epsilon, a_min=1e-5, a_max=100.0)
         self.priorities[indices] = priorities
 
     def __len__(self):

@@ -204,8 +204,6 @@ class GrenightAgent:
             else:
                 target = rewards + (self.gamma * self.gamma) * next_q_value
 
-        td_error = target - q_values
-
         losses = nn.functional.smooth_l1_loss(
             q_values,
             target,
@@ -227,7 +225,8 @@ class GrenightAgent:
 
         self.optimizer.step()
 
-        self.replay_buffer.update_priorities(indices, td_error.detach().abs().cpu().numpy())
+        priorities = losses.detach().cpu().numpy()
+        self.replay_buffer.update_priorities(indices, priorities)
 
         self.train_steps += 1
 
