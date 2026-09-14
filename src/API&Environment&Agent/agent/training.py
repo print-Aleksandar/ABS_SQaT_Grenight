@@ -16,7 +16,7 @@ from domain.configs import (
     LOG_EVERY_EPISODE,
     LOG_Q_EVERY_STEPS,
     DISCOUNT_FACTOR_GAMMA,
-    CHECKPOINT_DIR_COLAB as CHECKPOINT_DIR
+    CHECKPOINT_DIR_KAGGLE as CHECKPOINT_DIR
 )
 from agent.grenight_agent import GrenightAgent
 from environment.grenight_environment import GrenightEnvironment
@@ -162,12 +162,17 @@ def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
 
             move_count += 1
 
-            if not done and move_count < MAX_STEPS_PER_EPISODE:
-                shaping = (DISCOUNT_FACTOR_GAMMA * DISCOUNT_FACTOR_GAMMA) * phi_s2 - phi_s0
-            else:
+            if done:
+                if is_draw:
+                    base_reward = black_reward
+                else:
+                    base_reward = -black_reward
                 shaping = -phi_s0
+            else:
+                base_reward = white_reward - DISCOUNT_FACTOR_GAMMA * black_reward
+                shaping = (DISCOUNT_FACTOR_GAMMA ** 2) * phi_s2 - phi_s0
 
-            total_reward = (white_reward - DISCOUNT_FACTOR_GAMMA * black_reward) + shaping
+            total_reward = base_reward + shaping
         else:
             total_reward = white_reward
 
@@ -314,4 +319,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, False, True, False, False)
+train_agent(False, True, False, False, False, True)
