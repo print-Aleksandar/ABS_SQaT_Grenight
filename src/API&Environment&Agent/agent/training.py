@@ -141,24 +141,28 @@ def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
         epsilon = epsilon_at(agent_step)
 
         white_action = agent.select_action(white_old_state, old_legal_mask, epsilon)
+        phi_s0 = env.material_balance(env.pieces, True)
         _, white_reward, done, is_draw, info = env.step(white_action)
 
         agent_step += 1
         move_count += 1
 
-        total_reward = white_reward
-        # print(total_reward, len([p for p in env.pieces if p.is_white == True]), len([p for p in env.pieces if p.is_white == False]))
-
         if not done and move_count < MAX_STEPS_PER_EPISODE:
             is_white_on_turn = False
             black_action = env.sample()
             _, black_reward, done, is_draw, info = env.step(black_action)
+            phi_s2 = env.material_balance(env.pieces, True)
+
             move_count += 1
 
-            total_reward -= DISCOUNT_FACTOR_GAMMA * black_reward
-            # print(total_reward, len([p for p in env.pieces if p.is_white == True]), len([p for p in env.pieces if p.is_white == False]))
+            if not done and move_count < MAX_STEPS_PER_EPISODE:
+                shaping = DISCOUNT_FACTOR_GAMMA * phi_s2 - phi_s0
+            else:
+                shaping = -phi_s0
 
-        # print('-----------')
+            total_reward = (white_reward - DISCOUNT_FACTOR_GAMMA * black_reward) + shaping
+        else:
+            total_reward = white_reward
 
         next_legal_mask = env.action_mask()
 
@@ -303,4 +307,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, False, True, False, False)
+train_agent(False, True, False, False, False, True)

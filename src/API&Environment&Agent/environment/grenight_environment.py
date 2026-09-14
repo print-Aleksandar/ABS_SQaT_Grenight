@@ -1,5 +1,5 @@
 import numpy as np
-from domain.configs import MAX_STEPS_WITHOUT_PROGRESS, ROWS, DISCOUNT_FACTOR_GAMMA
+from domain.configs import MAX_STEPS_WITHOUT_PROGRESS, ROWS
 from domain.pieces import Piece, Pawn, PIECES_NUMBERS
 from domain.requests import MoveRequest, ValidMovesPiecesRequest
 from domain.exceptions import GrenightException
@@ -27,6 +27,7 @@ class GrenightEnvironment:
 
     OTHER_DRAWS = -1.0
     THREEFOLD_REPETITION_RULE_VALUE = 0.0
+    INSUFFICIENT_MATERIAL_PENALTY = -0.5
 
     def __init__(self, is_canonical_version: bool,
                  will_do_reward_shaping: bool) -> None:
@@ -174,11 +175,6 @@ class GrenightEnvironment:
         if self.done:
             raise RuntimeError("step() called on a finished episode; call reset() first.")
 
-        if self.will_do_reward_shaping:
-            phi_before = self.material_balance(self.pieces, True if self.is_canonical_version else self.is_white_on_turn)
-        else:
-            phi_before = 0
-
         self.steps_without_pawn_move_or_capture += 1
         self.is_enemy_in_check = False
 
@@ -277,12 +273,7 @@ class GrenightEnvironment:
                 self.done = True
                 self.draw_reason = "stalemate"
 
-        if self.will_do_reward_shaping:
-            phi_after = self.material_balance(self.pieces, False if self.is_canonical_version else not self.is_white_on_turn)
-        else:
-            phi_after = 0
-
-        reward = self.calculate_reward_registry(response, phi_after, phi_before)
+        reward = self.calculate_reward_registry(response)
 
         next_state = self.get_state()
 
@@ -334,9 +325,9 @@ class GrenightEnvironment:
             not any(p for p in ally_pieces if PIECES_NUMBERS[type(p)] in [self.QUEEN, self.ROOK]) \
             and not any(p for p in enemy_pieces if PIECES_NUMBERS[type(p)] in [self.QUEEN, self.ROOK])
 
-    def calculate_reward_registry(self, response, phi_after, phi_before) -> float:
+    def calculate_reward_registry(self, response) -> float:
         if self.will_do_reward_shaping:
-            return self.calculate_reward_with_shaping(response, phi_after, phi_before)
+            return self.calculate_reward_with_shaping(response)
         else:
             return self.calculate_reward_terminal_only(response)
 
@@ -348,17 +339,22 @@ class GrenightEnvironment:
             return 0.0
         return 1.0
 
-    def calculate_reward_with_shaping(self, response, phi_after, phi_before) -> float:
-        potential_bonus_reward = DISCOUNT_FACTOR_GAMMA * phi_after - phi_before
+    def calculate_reward_with_shaping(self, response) -> float:
+        if self.draw_reason == "stalemate":
+            return self.OTHER_DRAWS
 
-        if self.is_draw_by_rule or response.is_draw:
-            if self.draw_reason == "threefold_repetition":
-                if self.is_better_to_force_threefold_repetition():
-                    return self.THREEFOLD_REPETITION_RULE_VALUE + potential_bonus_reward
-                else:
-                    return self.OTHER_DRAWS + potential_bonus_reward
-            else:
-                return self.OTHER_DRAWS + potential_bonus_reward
+        if self.draw_reason == "insufficient_material":
+            return self.INSUFFICIENT_MATERIAL_PENALTY
 
-        else:
-            return 1.0 + potential_bonus_reward
+        if self.draw_reason == "threefold_repetition":
+            if self.is_better_to_force_threefold_repetition():
+                return self.THREEFOLD_REPETITION_RULE_VALUE
+            return self.OTHER_DRAWS
+
+        if self.draw_reason == "max_steps_without_progress" or response.is_draw:
+            return self.OTHER_DRAWS
+
+        if self.done:
+            return 1.0
+
+        return 0.0
