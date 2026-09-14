@@ -125,7 +125,8 @@ def train_self_play_episode(env: GrenightEnvironment, agent: GrenightAgent,
 
 def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
                             agent_step: int, losses: list[float], q_averages: list[float],
-                            q_maxs: list[float], q_mins: list[float]) -> tuple[bool, bool, bool, int, dict, int]:
+                            q_maxs: list[float], q_mins: list[float],
+                            will_do_reward_shaping: bool | None=False) -> tuple[bool, bool, bool, int, dict, int]:
 
     state = env.reset()
     done = False
@@ -141,7 +142,10 @@ def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
         epsilon = epsilon_at(agent_step)
 
         white_action = agent.select_action(white_old_state, old_legal_mask, epsilon)
-        phi_s0 = env.material_balance(env.pieces, True)
+        if will_do_reward_shaping:
+            phi_s0 = env.material_balance(env.pieces, True)
+        else:
+            phi_s0 = 0
         _, white_reward, done, is_draw, info = env.step(white_action)
 
         agent_step += 1
@@ -151,7 +155,10 @@ def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
             is_white_on_turn = False
             black_action = env.sample()
             _, black_reward, done, is_draw, info = env.step(black_action)
-            phi_s2 = env.material_balance(env.pieces, True)
+            if will_do_reward_shaping:
+                phi_s2 = env.material_balance(env.pieces, True)
+            else:
+                phi_s2 = 0
 
             move_count += 1
 
@@ -251,7 +258,7 @@ def train_agent(is_self_play: bool,
 
             else:
                 done, is_draw, is_white_on_turn, agent_step, info, move_count = train_vs_random_episode(
-                    env, agent, agent_step, losses, q_averages, q_maxs, q_mins
+                    env, agent, agent_step, losses, q_averages, q_maxs, q_mins, will_do_reward_shaping
                 )
 
             if not done:
@@ -307,4 +314,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, False, False, False, True)
+train_agent(False, True, True, False, False, False)
