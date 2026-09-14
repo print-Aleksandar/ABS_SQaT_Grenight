@@ -156,7 +156,7 @@ def train_vs_random_episode(env: GrenightEnvironment, agent: GrenightAgent,
             move_count += 1
 
             if not done and move_count < MAX_STEPS_PER_EPISODE:
-                shaping = DISCOUNT_FACTOR_GAMMA * phi_s2 - phi_s0
+                shaping = (DISCOUNT_FACTOR_GAMMA * DISCOUNT_FACTOR_GAMMA) * phi_s2 - phi_s0
             else:
                 shaping = -phi_s0
 
