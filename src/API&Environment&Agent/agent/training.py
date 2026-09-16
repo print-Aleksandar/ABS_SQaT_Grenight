@@ -1,6 +1,5 @@
 import os
 from collections import Counter, defaultdict
-from pathlib import Path
 import torch
 from agent.evaluation import process_stats, evaluate_agent_by_all_combos
 from domain.board_initialization import create_initial_board
@@ -56,30 +55,6 @@ def save_checkpoint(agent: GrenightAgent,
         }, path)
 
     print(f"[checkpoint] saved: {path}")
-
-
-def load_checkpoint(agent: GrenightAgent,
-                    is_double_net: bool) -> tuple[GrenightAgent, int, int]:
-
-    current_dir = Path(__file__).resolve().parent
-    checkpoint_path = current_dir / "implementations/ver51/p_111000/current_implementation_ep50000.pt"
-
-    checkpoint = torch.load(
-        checkpoint_path,
-        map_location="cuda" if torch.cuda.is_available() else "cpu",
-        weights_only=False
-    )
-
-    agent.policy_net.load_state_dict(checkpoint["policy_state_dict"])
-    if is_double_net:
-        agent.target_net.load_state_dict(checkpoint["target_state_dict"])
-    agent.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    agent.train_steps = checkpoint["train_steps"]
-
-    episode = checkpoint["episode"]
-    agent_step = checkpoint["agent_step"]
-
-    return agent, episode, agent_step
 
 
 def train_self_play_episode(env: GrenightEnvironment, agent: GrenightAgent,
@@ -319,4 +294,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, False, True, False, False)
+train_agent(False, True, True, False, False, False)

@@ -77,8 +77,7 @@ class Network(nn.Module):
                 nn.Linear(256, 128),
                 nn.LayerNorm(128),
                 nn.SiLU(),
-                nn.Linear(128, 1),
-                nn.LayerNorm(1)
+                nn.Linear(128, 1)
             )
 
             self.advantage = nn.Sequential(
