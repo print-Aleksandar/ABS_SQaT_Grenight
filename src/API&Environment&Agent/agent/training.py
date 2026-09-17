@@ -293,10 +293,11 @@ def train_agent(is_self_play: bool,
                 save_checkpoint(agent, episode, agent_step, is_double_net)
 
             if episode % LOG_EVERY_EPISODE == 0:
-                if prev_prev_policy is not None:
-                    pool.add(prev_prev_policy)
-                prev_prev_policy = prev_policy
-                prev_policy = agent.policy_net
+                if episode % (LOG_EVERY_EPISODE // 2) == 0:
+                    if prev_prev_policy is not None:
+                        pool.add(prev_prev_policy)
+                    prev_prev_policy = prev_policy
+                    prev_policy = agent.policy_net
 
                 print()
                 print("─" * 72)
