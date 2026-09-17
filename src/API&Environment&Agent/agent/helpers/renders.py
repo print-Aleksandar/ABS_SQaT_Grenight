@@ -15,29 +15,30 @@ def parse_games(raw: str) -> list[tuple[str, str, dict]]:
     return games
 
 
-def build_white_win_matrix(games, agents) -> pd.DataFrame:
+def build_decisive_win_matrix(games, agents) -> pd.DataFrame:
     mat = pd.DataFrame(index=agents, columns=agents, dtype=float)
     for white, black, c in games:
         if white not in agents or black not in agents:
             continue
-        total = c.get("white_win", 0) + c.get("black_win", 0) + c.get("draw", 0)
-        mat.loc[white, black] = c.get("white_win", 0) / total * 100
+        ww, bw = c.get("white_win", 0), c.get("black_win", 0)
+        decisive_total = ww + bw
+
+        mat.loc[white, black] = (ww / decisive_total * 100) if decisive_total > 0 else 50.0
     return mat
 
 
-def build_overall_scores(games) -> pd.DataFrame:
-    stats = defaultdict(lambda: {"win": 0, "loss": 0, "draw": 0, "games": 0})
+def build_overall_decisive_scores(games) -> pd.DataFrame:
+    stats = defaultdict(lambda: {"win": 0, "loss": 0, "games": 0})
     for white, black, c in games:
-        ww, bw, dr = c.get("white_win", 0), c.get("black_win", 0), c.get("draw", 0)
-        total = ww + bw + dr
+        ww, bw = c.get("white_win", 0), c.get("black_win", 0)
+
         stats[white]["win"] += ww
         stats[white]["loss"] += bw
-        stats[white]["draw"] += dr
-        stats[white]["games"] += total
+        stats[white]["games"] += (ww + bw)
+
         stats[black]["win"] += bw
         stats[black]["loss"] += ww
-        stats[black]["draw"] += dr
-        stats[black]["games"] += total
+        stats[black]["games"] += (ww + bw)
 
     rows = []
     for agent, s in stats.items():
@@ -46,12 +47,25 @@ def build_overall_scores(games) -> pd.DataFrame:
         rows.append({
             "agent": agent,
             "games": s["games"],
-            "win_pct": s["win"] / s["games"] * 100,
-            "draw_pct": s["draw"] / s["games"] * 100,
-            "loss_pct": s["loss"] / s["games"] * 100,
-            "score_pct": (s["win"] + 0.5 * s["draw"]) / s["games"] * 100,
+            "score_pct": s["win"] / s["games"] * 100,
         })
     return pd.DataFrame(rows).sort_values("score_pct", ascending=False).reset_index(drop=True)
+
+
+def build_same_impl_draw_scores(games, agents) -> pd.DataFrame:
+    stats = []
+    for agent in agents:
+        match = [c for w, b, c in games if w == agent and b == agent]
+        if match:
+            c = match[0]
+            total = c.get("white_win", 0) + c.get("black_win", 0) + c.get("draw", 0)
+            draw_pct = (c.get("draw", 0) / total * 100) if total > 0 else 0.0
+        else:
+            draw_pct = 0.0
+
+        stats.append({"agent": agent, "draw_pct": draw_pct})
+
+    return pd.DataFrame(stats).sort_values("draw_pct", ascending=True).reset_index(drop=True)
 
 
 def plot_heatmap(ax, matrix: pd.DataFrame, title: str, agent_labels: dict):
@@ -93,12 +107,28 @@ def plot_ranking(ax, scores: pd.DataFrame, agent_labels: dict):
 
     bars = ax.barh(labels, scores["score_pct"], color="#245C3A")
     ax.set_xlim(0, 100)
-    ax.set_xlabel("Score % (win + 0.5 x draw, both seats combined)")
+    ax.set_xlabel("Decisive Score % (win / (win + loss), both seats combined)")
     ax.set_title("Overall ranking", fontsize=11)
     ax.grid(axis="x", color="#e1e0d9", linewidth=0.8)
     ax.set_axisbelow(True)
 
     for bar, val in zip(bars, scores["score_pct"]):
         ax.text(val + 1, bar.get_y() + bar.get_height() / 2, f"{val:.1f}",
+                va="center", fontsize=9)
+
+
+def plot_same_impl_draw_ranking(ax, same_impl_scores: pd.DataFrame, agent_labels: dict):
+    scores = same_impl_scores.sort_values("draw_pct", ascending=False)
+    labels = [agent_labels.get(a, a) for a in scores["agent"]]
+
+    bars = ax.barh(labels, scores["draw_pct"], color="#245C3A")
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Draw Rate % in Same-Implementation Matches (lower = more decisive)", fontsize=9)
+    ax.set_title("Same-Implementation Match Decisiveness Ranking", fontsize=11)
+    ax.grid(axis="x", color="#e1e0d9", linewidth=0.8)
+    ax.set_axisbelow(True)
+
+    for bar, val in zip(bars, scores["draw_pct"]):
+        ax.text(val + 1, bar.get_y() + bar.get_height() / 2, f"{val:.1f}%",
                 va="center", fontsize=9)
         

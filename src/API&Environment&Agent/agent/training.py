@@ -1,7 +1,12 @@
 import os
+import random
 from collections import Counter, defaultdict
+
+import numpy as np
 import torch
 from agent.evaluation import process_stats, evaluate_agent_by_all_combos
+from agent.network import Network
+from agent.opponent_pool import OpponentPool
 from domain.board_initialization import create_initial_board
 from domain.configs import (
     ROWS,
@@ -57,37 +62,49 @@ def save_checkpoint(agent: GrenightAgent,
     print(f"[checkpoint] saved: {path}")
 
 
-def train_self_play_episode(env: GrenightEnvironment, agent: GrenightAgent,
-                            agent_step: int, losses: list[float], q_averages: list[float],
-                            q_maxs: list[float], q_mins: list[float]) -> tuple[bool, bool, bool, int, dict, int]:
-
+def train_self_play_episode(env, agent, agent_step, losses, q_averages,
+                             q_maxs, q_mins, opponent_net=None):
     state = env.reset()
     done = False
     is_draw = False
     is_white_on_turn = True
     move_count = 0
     info = None
+    live_plays_white = random.random() < 0.5
 
     while not done and move_count < MAX_STEPS_PER_EPISODE:
         is_white_on_turn = env.is_white_on_turn
-
-        epsilon = epsilon_at(agent_step)
         legal_mask = env.action_mask()
+        is_live_turn = (is_white_on_turn == live_plays_white) or opponent_net is None
 
-        action = agent.select_action(state, legal_mask, epsilon)
+        if is_live_turn:
+            epsilon = epsilon_at(agent_step)
+            action = agent.select_action(state, legal_mask, epsilon)
+        else:
+            with torch.no_grad():
+                state_t = torch.from_numpy(state).unsqueeze(0).to(agent.device)
+                mask_t = (
+                    None if not agent.is_dueling_net
+                    else torch.from_numpy(legal_mask).unsqueeze(0).to(agent.device)
+                )
+                q = agent._q(opponent_net, state_t, mask_t).squeeze(0).cpu().numpy()
+                legal_indices = np.flatnonzero(legal_mask)
+                masked_q = np.full(agent.num_actions, -np.inf, dtype=np.float32)
+                masked_q[legal_indices] = q[legal_indices]
+                action = int(np.argmax(masked_q))
+
         new_state, reward, done, is_draw, info = env.step(action)
         agent_step += 1
-
         next_legal_mask = env.action_mask()
-        agent.store(state, legal_mask, action, reward, new_state, done, next_legal_mask)
 
-        loss = agent.train_step()
-        if loss is not None:
-            losses.append(loss)
+        if is_live_turn:
+            agent.store(state, legal_mask, action, reward, new_state, done, next_legal_mask)
+            loss = agent.train_step()
+            if loss is not None:
+                losses.append(loss)
 
-        if agent_step % LOG_Q_EVERY_STEPS == 0:
+        if is_live_turn and agent_step % LOG_Q_EVERY_STEPS == 0:
             agent.set_legal_q_stats(state, legal_mask)
-
             q_averages.append(agent.last_mean_legal_q)
             q_mins.append(agent.last_min_legal_q)
             q_maxs.append(agent.last_max_legal_q)
@@ -228,12 +245,30 @@ def train_agent(is_self_play: bool,
     total_moves = 0
     q_averages, q_maxs, q_mins = [], [], []
 
+    prev_prev_policy = None
+    prev_policy = None
+
+    pool = OpponentPool(max_size=5)
+
+    def make_network():
+        return Network(agent.is_dueling_net, agent.is_residual_net,
+                       env.state_encoder.num_planes, ROWS, COLUMNS,
+                       env.action_encoder.num_actions)
+
     try:
         for episode in range(episode_start, TRAIN_EPISODES + 1):
 
             if is_self_play:
+                use_pool_opponent = pool.snapshots and random.random() < 0.5
+
+                opponent_net = (
+                    pool.sample_opponent_net(make_network, device)
+                    if use_pool_opponent else None
+                )
+
                 done, is_draw, is_white_on_turn, agent_step, info, move_count = train_self_play_episode(
-                    env, agent, agent_step, losses, q_averages, q_maxs, q_mins
+                    env, agent, agent_step, losses, q_averages, q_maxs, q_mins,
+                    opponent_net=opponent_net
                 )
 
             else:
@@ -258,6 +293,11 @@ def train_agent(is_self_play: bool,
                 save_checkpoint(agent, episode, agent_step, is_double_net)
 
             if episode % LOG_EVERY_EPISODE == 0:
+                if prev_prev_policy is not None:
+                    pool.add(prev_prev_policy)
+                prev_prev_policy = prev_policy
+                prev_policy = agent.policy_net
+
                 print()
                 print("─" * 72)
                 print(f"  EPISODE {episode:,}")
@@ -294,4 +334,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(False, True, True, False, False, False)
+train_agent(True, True, False, True, True, False)

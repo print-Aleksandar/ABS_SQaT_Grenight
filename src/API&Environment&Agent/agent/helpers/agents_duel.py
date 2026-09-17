@@ -17,7 +17,7 @@ def test_agents(left_agent: GrenightAgent,
 
     outcomes = Counter()
 
-    for _ in range(10):
+    for _ in range(1_000):
         env.reset()
 
         move_count = 0
