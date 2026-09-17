@@ -36,7 +36,7 @@ class GrenightEnvironment:
         self.will_do_reward_shaping = will_do_reward_shaping
 
         self.action_encoder = ActionEncoder(self.is_canonical_version)
-        self.state_encoder = PiecePlaneEncoder()
+        self.state_encoder = PiecePlaneEncoder(not self.is_canonical_version)
 
         self.pieces = None
 
