@@ -1,7 +1,7 @@
 import os
 import random
 from collections import Counter, defaultdict
-
+from copy import deepcopy
 import numpy as np
 import torch
 from agent.evaluation import process_stats, evaluate_agent_by_all_combos
@@ -297,7 +297,7 @@ def train_agent(is_self_play: bool,
                     if prev_prev_policy is not None:
                         pool.add(prev_prev_policy)
                     prev_prev_policy = prev_policy
-                    prev_policy = agent.policy_net
+                    prev_policy = deepcopy(agent.policy_net)
 
                 print()
                 print("─" * 72)

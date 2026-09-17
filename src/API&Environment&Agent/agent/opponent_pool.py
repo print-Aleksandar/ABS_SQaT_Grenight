@@ -1,4 +1,3 @@
-import copy
 import random
 
 class OpponentPool:
@@ -7,7 +6,7 @@ class OpponentPool:
         self.snapshots = []
 
     def add(self, policy_net) -> None:
-        snap = copy.deepcopy(policy_net.state_dict())
+        snap = policy_net.state_dict()
         self.snapshots.append(snap)
         if len(self.snapshots) > self.max_size:
             self.snapshots.pop(random.randint(0, len(self.snapshots) - 1))

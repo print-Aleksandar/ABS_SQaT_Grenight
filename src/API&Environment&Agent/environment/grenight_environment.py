@@ -30,7 +30,7 @@ class GrenightEnvironment:
     INSUFFICIENT_MATERIAL_PENALTY = -0.5
 
     def __init__(self, is_canonical_version: bool,
-                 will_do_reward_shaping: bool) -> None:
+                 will_do_reward_shaping: bool | None=False) -> None:
 
         self.is_canonical_version = is_canonical_version
         self.will_do_reward_shaping = will_do_reward_shaping
