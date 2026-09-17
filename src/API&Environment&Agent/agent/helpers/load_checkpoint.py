@@ -28,6 +28,6 @@ def load_checkpoint(agent: GrenightAgent,
         episode = checkpoint["episode"]
         agent_step = checkpoint["agent_step"]
 
-        return agent, episode, agent_step
+        return episode, agent_step
 
-    return agent
+    return None
