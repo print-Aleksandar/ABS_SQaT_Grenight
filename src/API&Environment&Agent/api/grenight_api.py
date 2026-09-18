@@ -1,8 +1,5 @@
-import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
-from agent.grenight_agent import GrenightAgent
 from domain.board_initialization import create_initial_board
 from domain.configs import COLUMNS, ROWS
 from domain.pieces import Piece
@@ -21,7 +18,9 @@ from api.api_validators import (non_existent_valid_piece_with_uid_exception,
                                 player_wants_to_gather_valid_moves_for_enemy_piece_exception,
                                 agent_not_on_turn_exception)
 from domain.responses import MoveResponse
-from environment.grenight_environment import GrenightEnvironment
+from environment.grenight_environment import GrenightEnvironment, rotate_pieces_helper
+from agent.grenight_agent import GrenightAgent
+from agent.helpers.load_checkpoint import load_checkpoint
 
 app = FastAPI()
 
@@ -160,15 +159,14 @@ def agent_move(request_arg: AgentMoveRequestDTO) -> MoveResponseDTO:
     )
 
 
-env = GrenightEnvironment(is_canonical_version=False,
-                          will_do_reward_shaping=False)
+env = GrenightEnvironment(is_canonical_version=True,
+                          will_do_reward_shaping=True)
 
 agent = GrenightAgent(
-    is_self_play=False,
+    is_self_play=True,
     is_double_net=True,
     is_dueling_net=True,
     is_residual_net=True,
-    will_do_bulk_update=False,
     rows=ROWS,
     columns=COLUMNS,
     num_actions=env.action_encoder.num_actions,
@@ -176,12 +174,7 @@ agent = GrenightAgent(
     device="cpu"
 )
 
-current_dir = Path(__file__).resolve().parent
-checkpoint_path = current_dir / "../agent/implementations/ver51/p_111000/current_implementation_ep50000.pt"
-checkpoint = torch.load(checkpoint_path.resolve(), map_location="cpu",weights_only=False)
-agent.policy_net.load_state_dict(checkpoint["policy_state_dict"])
-if agent.is_double_net:
-    agent.target_net.load_state_dict(checkpoint["target_state_dict"])
+load_checkpoint(agent, "S111110", 10_000)
 
 
 def agent_taking_action(pieces: list[Piece]) -> MoveResponse:
@@ -194,12 +187,15 @@ def agent_taking_action(pieces: list[Piece]) -> MoveResponse:
     action = agent.select_action(env.get_state(), env.action_mask(), 0.05)
     _, _, done, is_draw, _ = env.step(action)
 
+    if not done:
+        rotate_pieces_helper(env.pieces)
+
     return MoveResponse(
         pieces=env.pieces,
         is_game_finished=done,
         is_draw=is_draw,
-        is_white_winner=True if done and not is_draw else False,
-        is_white_on_turn=env.is_white_on_turn,
+        is_white_winner=True,
+        is_white_on_turn=False,
         is_next_move_promotion=False,
         is_enemy_in_check=env.is_enemy_in_check
     )

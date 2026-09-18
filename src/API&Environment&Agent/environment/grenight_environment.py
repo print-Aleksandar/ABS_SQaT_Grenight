@@ -25,9 +25,9 @@ class GrenightEnvironment:
     PAWN, ROOK, QUEEN = 0, 1, 2
     PIECE_VALUES = {PAWN: 0.02, ROOK: 0.1, QUEEN: 0.18}
 
-    OTHER_DRAWS = -1.0
+    HARDER_DRAWS = -1.0
+    LIGHTER_DRAWS = -0.5
     THREEFOLD_REPETITION_RULE_VALUE = 0.0
-    INSUFFICIENT_MATERIAL_PENALTY = -0.5
 
     def __init__(self, is_canonical_version: bool,
                  will_do_reward_shaping: bool | None=False) -> None:
@@ -43,6 +43,8 @@ class GrenightEnvironment:
         self.is_white_on_turn = True
         self.done = False
         self.is_enemy_in_check = False
+
+        self.is_threefold_repetition_better = False
 
         self.current_repetition_count = 0
         self.steps_without_pawn_move_or_capture = 0
@@ -68,6 +70,7 @@ class GrenightEnvironment:
         self.pieces = create_initial_board()
         self.is_white_on_turn = True
         self.done = False
+        self.is_threefold_repetition_better = False
         self.steps_without_pawn_move_or_capture = 0
         self.position_counts = {}
         self.current_repetition_count = 0
@@ -178,6 +181,8 @@ class GrenightEnvironment:
         self.steps_without_pawn_move_or_capture += 1
         self.is_enemy_in_check = False
 
+        self.is_threefold_repetition_better = self._is_threefold_repetition_better()
+
         self.legal_actions()
         if action not in self._legal_actions_set_cache:
             raise ValueError(f"Illegal action {action}")
@@ -235,24 +240,11 @@ class GrenightEnvironment:
         self.pieces = response.pieces
         self.is_enemy_in_check = response.is_enemy_in_check
 
-        if self.is_canonical_version and not self.is_white_on_turn and not self.done:
-            rotate_pieces_helper(self.pieces)
-
-        self.is_white_on_turn = not self.is_white_on_turn
-        self.done = response.is_game_finished
         self.is_draw_by_rule = False
         self.draw_reason = None
-        self._state_cache = None
-        self._invalidate_legal_actions_cache()
+        self.done = response.is_game_finished
 
         if not self.done:
-            key = self.position_key()
-            self.current_repetition_count = self.position_counts.get(key, 0) + 1
-            self.position_counts[key] = self.current_repetition_count
-
-            if self.is_canonical_version and not self.is_white_on_turn:
-                rotate_pieces_helper(self.pieces)
-
             if self.steps_without_pawn_move_or_capture >= MAX_STEPS_WITHOUT_PROGRESS:
                 self.done = True
                 self.is_draw_by_rule = True
@@ -263,15 +255,30 @@ class GrenightEnvironment:
                 self.is_draw_by_rule = True
                 self.draw_reason = "insufficient_material"
 
-            elif self.current_repetition_count >= 3:
-                self.done = True
-                self.is_draw_by_rule = True
-                self.draw_reason = "threefold_repetition"
-
         else:
             if response.is_game_finished and response.is_draw:
                 self.done = True
                 self.draw_reason = "stalemate"
+
+        if self.is_canonical_version and not self.is_white_on_turn and not self.done:
+            rotate_pieces_helper(self.pieces)
+
+        if not self.done:
+            key = self.position_key()
+            self.current_repetition_count = self.position_counts.get(key, 0) + 1
+            self.position_counts[key] = self.current_repetition_count
+
+            if self.current_repetition_count >= 3:
+                self.done = True
+                self.is_draw_by_rule = True
+                self.draw_reason = "threefold_repetition"
+
+        self.is_white_on_turn = not self.is_white_on_turn
+        self._state_cache = None
+        self._invalidate_legal_actions_cache()
+
+        if self.is_canonical_version and not self.is_white_on_turn and not self.done:
+            rotate_pieces_helper(self.pieces)
 
         reward = self.calculate_reward_registry(response)
 
@@ -306,15 +313,15 @@ class GrenightEnvironment:
             return False
         return True
 
-    def is_better_to_force_threefold_repetition(self) -> bool:
+    def _is_threefold_repetition_better(self) -> bool:
         ally_pieces = [p for p in self.pieces if (
-            (not self.is_canonical_version and p.is_white != self.is_white_on_turn)
-             or (self.is_canonical_version and p.is_white == False)
+            (not self.is_canonical_version and p.is_white == self.is_white_on_turn)
+             or (self.is_canonical_version and p.is_white == True)
         )]
 
         enemy_pieces = [p for p in self.pieces if (
-            (not self.is_canonical_version and p.is_white == self.is_white_on_turn)
-             or (self.is_canonical_version and p.is_white == True)
+            (not self.is_canonical_version and p.is_white != self.is_white_on_turn)
+             or (self.is_canonical_version and p.is_white == False)
         )]
 
         if not any(p for p in ally_pieces if PIECES_NUMBERS[type(p)] in [self.QUEEN, self.ROOK]) \
@@ -341,18 +348,18 @@ class GrenightEnvironment:
 
     def calculate_reward_with_shaping(self, response) -> float:
         if self.draw_reason == "stalemate":
-            return self.OTHER_DRAWS
+            return self.HARDER_DRAWS
 
         if self.draw_reason == "insufficient_material":
-            return self.INSUFFICIENT_MATERIAL_PENALTY
+            return self.LIGHTER_DRAWS
 
         if self.draw_reason == "threefold_repetition":
-            if self.is_better_to_force_threefold_repetition():
+            if self.is_threefold_repetition_better:
                 return self.THREEFOLD_REPETITION_RULE_VALUE
-            return self.OTHER_DRAWS
+            return self.LIGHTER_DRAWS
 
         if self.draw_reason == "max_steps_without_progress" or response.is_draw:
-            return self.OTHER_DRAWS
+            return self.HARDER_DRAWS
 
         if self.done:
             return 1.0

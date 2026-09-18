@@ -3,22 +3,19 @@ from agent.grenight_agent import GrenightAgent
 from domain.configs import MAX_STEPS_PER_EPISODE
 from environment.action_encoder import ActionEncoder
 from environment.grenight_environment import GrenightEnvironment
-from environment.piece_plane_encoder import PiecePlaneEncoder
 
 
 def test_agents(left_agent: GrenightAgent,
                 right_agent: GrenightAgent,
                 left_name: str,
                 right_name: str,
-                is_left_canonical: bool | None=False,
-                is_right_canonical: bool | None=False) -> str:
+                is_left_canonical: bool | None=True,
+                is_right_canonical: bool | None=True) -> str:
 
     env = GrenightEnvironment(
         is_canonical_version=True,
         will_do_reward_shaping=False
     )
-
-    env.piece_plane_encoder = PiecePlaneEncoder(is_absolute_perspective=False)
 
     outcomes = Counter()
 
