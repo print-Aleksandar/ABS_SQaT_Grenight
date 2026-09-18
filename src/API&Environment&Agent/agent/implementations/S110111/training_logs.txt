@@ -1,0 +1,346 @@
+will save checkpoints in: /kaggle/working/checkpoints
+
+number of rows                   : 5
+number of columns                : 4
+number of pieces                 : 16
+is self play                     : True
+is double net                    : True
+is dueling net                   : False
+is residual net                  : True
+is canonical version             : True
+will do reward shaping           : True
+
+policy_net device: cuda:0
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 1,000
+
+  ε (epsilon)     :   0.7342
+  agent step      :   55,968
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  17.4%   black  18.6%   draw  64.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  11.9%   stalemate  30.6%   insufficient_material  49.2%   max_steps_without_progress   8.3%   
+  average env moves per game:  56.0
+  agent       loss 0.00030513   registered Q avg  -0.0173   registered Q max   0.2828   registered Q min  -0.3060
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  64.0%   black   1.0%   draw  35.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  15.7%   stalemate  62.9%   insufficient_material  20.0%   max_steps_without_progress   1.4%   
+  average env moves per game:  25.6
+  agent       loss 0.03596111   registered Q avg  -0.0337   registered Q max   0.0827   registered Q min  -0.1266
+  diagnostics registered target avg   0.0371   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1535   registered |TD| max   1.4538
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   1.5%   black  64.0%   draw  34.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  15.9%   stalemate  66.7%   insufficient_material  15.9%   max_steps_without_progress   1.4%   
+  average env moves per game:  27.0
+  agent       loss 0.03106501   registered Q avg  -0.0276   registered Q max   0.0899   registered Q min  -0.1264
+  diagnostics registered target avg   0.0123   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1612   registered |TD| max   1.3176
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 2,000
+
+  ε (epsilon)     :   0.5348
+  agent step      :   97,947
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  25.0%   black  20.5%   draw  54.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  11.7%   stalemate  37.6%   insufficient_material  48.3%   max_steps_without_progress   2.4%   
+  average env moves per game:  42.0
+  agent       loss 0.00024896   registered Q avg  -0.1026   registered Q max  -0.0503   registered Q min  -0.1542
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  75.0%   black   0.5%   draw  24.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  16.3%   stalemate  69.4%   insufficient_material  12.2%   max_steps_without_progress   2.0%   
+  average env moves per game:  22.2
+  agent       loss 0.03477718   registered Q avg   0.0374   registered Q max   0.1682   registered Q min  -0.0920
+  diagnostics registered target avg   0.0953   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1435   registered |TD| max   1.3555
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   1.0%   black  76.0%   draw  23.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  19.6%   stalemate  73.9%   insufficient_material   6.5%   max_steps_without_progress   0.0%   
+  average env moves per game:  24.1
+  agent       loss 0.03481079   registered Q avg   0.0382   registered Q max   0.2028   registered Q min  -0.1245
+  diagnostics registered target avg   0.1109   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1831   registered |TD| max   1.6002
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 3,000
+
+  ε (epsilon)     :   0.3532
+  agent step      :  136,177
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  30.3%   black  25.0%   draw  44.7%   truncated   0.0%
+  draw_reasons  threefold_repetition  13.2%   stalemate  42.3%   insufficient_material  43.4%   max_steps_without_progress   1.1%   
+  average env moves per game:  38.2
+  agent       loss 0.00027555   registered Q avg   0.0104   registered Q max   0.1354   registered Q min  -0.0966
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  78.0%   black   0.0%   draw  22.0%   truncated   0.0%
+  draw_reasons  threefold_repetition   4.5%   stalemate  90.9%   insufficient_material   4.5%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.2
+  agent       loss 0.04083391   registered Q avg   0.1011   registered Q max   0.2882   registered Q min  -0.0734
+  diagnostics registered target avg   0.2267   registered target max   1.0130   registered target min  -1.0000
+              registered |TD| avg   0.1538   registered |TD| max   1.6759
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   1.0%   black  77.5%   draw  21.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  16.3%   stalemate  81.4%   insufficient_material   2.3%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.5
+  agent       loss 0.03808033   registered Q avg   0.1108   registered Q max   0.3027   registered Q min  -0.0671
+  diagnostics registered target avg   0.2208   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1983   registered |TD| max   1.8256
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 4,000
+
+  ε (epsilon)     :   0.1811
+  agent step      :  172,408
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  31.3%   black  25.0%   draw  43.7%   truncated   0.0%
+  draw_reasons  threefold_repetition  25.6%   stalemate  37.5%   insufficient_material  35.7%   max_steps_without_progress   1.1%   
+  average env moves per game:  36.2
+  agent       loss 0.00029207   registered Q avg  -0.0249   registered Q max   0.1125   registered Q min  -0.1683
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  74.5%   black   0.5%   draw  25.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  24.0%   stalemate  70.0%   insufficient_material   6.0%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.1
+  agent       loss 0.03882556   registered Q avg   0.2451   registered Q max   0.4807   registered Q min   0.0228
+  diagnostics registered target avg   0.3864   registered target max   1.1181   registered target min  -1.0000
+              registered |TD| avg   0.1735   registered |TD| max   2.0033
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   1.0%   black  75.0%   draw  24.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  18.8%   stalemate  79.2%   insufficient_material   2.1%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.8
+  agent       loss 0.03754495   registered Q avg   0.1770   registered Q max   0.4020   registered Q min  -0.0504
+  diagnostics registered target avg   0.3288   registered target max   1.0326   registered target min  -1.0000
+              registered |TD| avg   0.1601   registered |TD| max   1.2278
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 5,000
+
+  ε (epsilon)     :   0.0500
+  agent step      :  206,950
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  36.4%   black  27.7%   draw  35.9%   truncated   0.0%
+  draw_reasons  threefold_repetition  40.1%   stalemate  37.9%   insufficient_material  22.0%   max_steps_without_progress   0.0%   
+  average env moves per game:  34.5
+  agent       loss 0.00028198   registered Q avg   0.0859   registered Q max   0.3152   registered Q min  -0.1552
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  82.0%   black   0.0%   draw  18.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  16.7%   stalemate  80.6%   insufficient_material   2.8%   max_steps_without_progress   0.0%   
+  average env moves per game:  17.8
+  agent       loss 0.03634082   registered Q avg   0.2293   registered Q max   0.5027   registered Q min  -0.0353
+  diagnostics registered target avg   0.4337   registered target max   1.0106   registered target min  -1.0000
+              registered |TD| avg   0.1361   registered |TD| max   1.7745
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   0.0%   black  81.0%   draw  19.0%   truncated   0.0%
+  draw_reasons  threefold_repetition   7.9%   stalemate  86.8%   insufficient_material   5.3%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.3
+  agent       loss 0.03600141   registered Q avg   0.2444   registered Q max   0.4856   registered Q min   0.0113
+  diagnostics registered target avg   0.4062   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1445   registered |TD| max   1.9820
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 6,000
+
+  ε (epsilon)     :   0.0500
+  agent step      :  242,184
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  31.7%   black  27.6%   draw  40.7%   truncated   0.0%
+  draw_reasons  threefold_repetition  54.1%   stalemate  25.6%   insufficient_material  20.4%   max_steps_without_progress   0.0%   
+  average env moves per game:  35.2
+  agent       loss 0.00025625   registered Q avg  -0.0862   registered Q max   0.1063   registered Q min  -0.2907
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  86.5%   black   0.5%   draw  13.0%   truncated   0.0%
+  draw_reasons  threefold_repetition   7.7%   stalemate  92.3%   insufficient_material   0.0%   max_steps_without_progress   0.0%   
+  average env moves per game:  17.6
+  agent       loss 0.03326100   registered Q avg   0.2033   registered Q max   0.4919   registered Q min  -0.0619
+  diagnostics registered target avg   0.4126   registered target max   1.0328   registered target min  -1.0000
+              registered |TD| avg   0.1446   registered |TD| max   1.3139
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   0.0%   black  82.5%   draw  17.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  20.0%   stalemate  80.0%   insufficient_material   0.0%   max_steps_without_progress   0.0%   
+  average env moves per game:  18.2
+  agent       loss 0.03836917   registered Q avg   0.2299   registered Q max   0.5123   registered Q min  -0.0388
+  diagnostics registered target avg   0.4314   registered target max   1.0665   registered target min  -1.0000
+              registered |TD| avg   0.1519   registered |TD| max   1.9357
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 7,000
+
+  ε (epsilon)     :   0.0500
+  agent step      :  277,637
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  31.1%   black  27.8%   draw  41.1%   truncated   0.0%
+  draw_reasons  threefold_repetition  53.3%   stalemate  24.8%   insufficient_material  21.4%   max_steps_without_progress   0.5%   
+  average env moves per game:  35.5
+  agent       loss 0.00024882   registered Q avg  -0.1448   registered Q max   0.0593   registered Q min  -0.3552
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  85.5%   black   0.0%   draw  14.5%   truncated   0.0%
+  draw_reasons  threefold_repetition   6.9%   stalemate  86.2%   insufficient_material   6.9%   max_steps_without_progress   0.0%   
+  average env moves per game:  17.4
+  agent       loss 0.03133145   registered Q avg   0.2203   registered Q max   0.4792   registered Q min  -0.0130
+  diagnostics registered target avg   0.3988   registered target max   1.0100   registered target min  -1.0000
+              registered |TD| avg   0.1798   registered |TD| max   1.7688
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   0.0%   black  81.5%   draw  18.5%   truncated   0.0%
+  draw_reasons  threefold_repetition   5.4%   stalemate  89.2%   insufficient_material   5.4%   max_steps_without_progress   0.0%   
+  average env moves per game:  20.9
+  agent       loss 0.03732301   registered Q avg   0.2541   registered Q max   0.5187   registered Q min   0.0043
+  diagnostics registered target avg   0.4350   registered target max   1.0440   registered target min  -1.0000
+              registered |TD| avg   0.1459   registered |TD| max   1.8822
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 8,000
+
+  ε (epsilon)     :   0.0500
+  agent step      :  313,456
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  31.6%   black  27.7%   draw  40.7%   truncated   0.0%
+  draw_reasons  threefold_repetition  54.5%   stalemate  28.0%   insufficient_material  17.4%   max_steps_without_progress   0.0%   
+  average env moves per game:  35.8
+  agent       loss 0.00023803   registered Q avg  -0.1387   registered Q max   0.1399   registered Q min  -0.3407
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  82.0%   black   0.0%   draw  18.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  13.9%   stalemate  83.3%   insufficient_material   2.8%   max_steps_without_progress   0.0%   
+  average env moves per game:  20.0
+  agent       loss 0.03343033   registered Q avg   0.2673   registered Q max   0.5844   registered Q min  -0.0381
+  diagnostics registered target avg   0.5752   registered target max   1.0574   registered target min  -0.1924
+              registered |TD| avg   0.1198   registered |TD| max   0.7649
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   1.0%   black  81.0%   draw  18.0%   truncated   0.0%
+  draw_reasons  threefold_repetition   5.6%   stalemate  94.4%   insufficient_material   0.0%   max_steps_without_progress   0.0%   
+  average env moves per game:  22.0
+  agent       loss 0.03586021   registered Q avg   0.2743   registered Q max   0.5200   registered Q min   0.0193
+  diagnostics registered target avg   0.4418   registered target max   1.0319   registered target min  -1.0000
+              registered |TD| avg   0.1431   registered |TD| max   2.1062
+────────────────────────────────────────────────────────────────────────
+
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 9,000
+
+  ε (epsilon)     :   0.0500
+  agent step      :  348,221
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  35.3%   black  25.5%   draw  39.2%   truncated   0.0%
+  draw_reasons  threefold_repetition  53.6%   stalemate  27.3%   insufficient_material  18.9%   max_steps_without_progress   0.3%   
+  average env moves per game:  34.8
+  agent       loss 0.00023014   registered Q avg  -0.1981   registered Q max   0.0768   registered Q min  -0.4396
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  78.0%   black   0.0%   draw  22.0%   truncated   0.0%
+  draw_reasons  threefold_repetition  11.4%   stalemate  86.4%   insufficient_material   2.3%   max_steps_without_progress   0.0%   
+  average env moves per game:  22.6
+  agent       loss 0.03610714   registered Q avg   0.3382   registered Q max   0.5846   registered Q min   0.0858
+  diagnostics registered target avg   0.5203   registered target max   1.1493   registered target min  -1.0000
+              registered |TD| avg   0.1156   registered |TD| max   1.8401
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   0.5%   black  78.5%   draw  21.0%   truncated   0.0%
+  draw_reasons  threefold_repetition   4.8%   stalemate  92.9%   insufficient_material   2.4%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.8
+  agent       loss 0.04083908   registered Q avg   0.2588   registered Q max   0.4792   registered Q min   0.0322
+  diagnostics registered target avg   0.3857   registered target max   1.0471   registered target min  -1.0000
+              registered |TD| avg   0.1548   registered |TD| max   1.9947
+────────────────────────────────────────────────────────────────────────
+
+[checkpoint] saved: /kaggle/working/checkpoints/curr_impl_ep10000.pt
+
+────────────────────────────────────────────────────────────────────────
+  EPISODE 10,000
+
+  ε (epsilon)     :   0.0500
+  agent step      :  383,498
+
+
+training self play statistics — last 1,000 episodes
+  outcomes     white  37.2%   black  28.3%   draw  34.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  44.6%   stalemate  29.3%   insufficient_material  25.8%   max_steps_without_progress   0.3%   
+  average env moves per game:  35.3
+  agent       loss 0.00023281   registered Q avg  -0.1089   registered Q max   0.0913   registered Q min  -0.4140
+
+  Running evaluation...
+
+evaluation (agent=white vs random) statistics — another new 200 games
+  outcomes     white  79.0%   black   0.0%   draw  21.0%   truncated   0.0%
+  draw_reasons  threefold_repetition   7.1%   stalemate  83.3%   insufficient_material   9.5%   max_steps_without_progress   0.0%   
+  average env moves per game:  22.3
+  agent       loss 0.03561971   registered Q avg   0.3598   registered Q max   0.6135   registered Q min   0.1180
+  diagnostics registered target avg   0.4861   registered target max   1.0000   registered target min  -1.0000
+              registered |TD| avg   0.1740   registered |TD| max   1.9557
+
+evaluation (agent=black vs random) statistics — another new 200 games
+  outcomes     white   0.0%   black  83.5%   draw  16.5%   truncated   0.0%
+  draw_reasons  threefold_repetition  15.2%   stalemate  84.8%   insufficient_material   0.0%   max_steps_without_progress   0.0%   
+  average env moves per game:  21.8
+  agent       loss 0.03347022   registered Q avg   0.2515   registered Q max   0.5398   registered Q min  -0.0482
+  diagnostics registered target avg   0.4017   registered target max   1.0941   registered target min  -1.0000
+              registered |TD| avg   0.1919   registered |TD| max   2.1259
+────────────────────────────────────────────────────────────────────────
+
+[checkpoint] saved: /kaggle/working/checkpoints/curr_impl_ep10000.pt
+Done.
