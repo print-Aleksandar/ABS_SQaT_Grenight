@@ -3,17 +3,22 @@ from agent.grenight_agent import GrenightAgent
 from domain.configs import MAX_STEPS_PER_EPISODE
 from environment.action_encoder import ActionEncoder
 from environment.grenight_environment import GrenightEnvironment
+from environment.piece_plane_encoder import PiecePlaneEncoder
+
 
 def test_agents(left_agent: GrenightAgent,
                 right_agent: GrenightAgent,
                 left_name: str,
-                right_name: str) -> str:
+                right_name: str,
+                is_left_canonical: bool | None=False,
+                is_right_canonical: bool | None=False) -> str:
 
     env = GrenightEnvironment(
         is_canonical_version=True,
         will_do_reward_shaping=False
     )
-    env.action_encoder = ActionEncoder(is_canonical_version=False)
+
+    env.piece_plane_encoder = PiecePlaneEncoder(is_absolute_perspective=False)
 
     outcomes = Counter()
 
@@ -28,6 +33,8 @@ def test_agents(left_agent: GrenightAgent,
         while move_count < MAX_STEPS_PER_EPISODE and not done:
             is_white_on_turn = True
 
+            env.action_encoder = ActionEncoder(is_canonical_version=is_left_canonical)
+
             left_state = env.get_state()
             left_mask = env.action_mask()
             left_act = left_agent.select_action(left_state, left_mask, 0.05)
@@ -37,6 +44,8 @@ def test_agents(left_agent: GrenightAgent,
 
             if move_count < MAX_STEPS_PER_EPISODE and not done:
                 is_white_on_turn = False
+
+                env.action_encoder = ActionEncoder(is_canonical_version=is_right_canonical)
 
                 right_state = env.get_state()
                 right_mask = env.action_mask()

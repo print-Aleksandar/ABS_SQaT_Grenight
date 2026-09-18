@@ -63,7 +63,9 @@ def save_checkpoint(agent: GrenightAgent,
 
 
 def train_self_play_episode(env, agent, agent_step, losses, q_averages,
-                             q_maxs, q_mins, opponent_net=None):
+                            q_maxs, q_mins, opponent_net=None,
+                            will_do_reward_shaping: bool | None=False):
+
     state = env.reset()
     done = False
     is_draw = False
@@ -76,6 +78,11 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
         is_white_on_turn = env.is_white_on_turn
         legal_mask = env.action_mask()
         is_live_turn = (is_white_on_turn == live_plays_white) or opponent_net is None
+
+        # Note: this is true only when is canonical = True
+        phi_s0 = (
+            env.material_balance(env.pieces, True) if will_do_reward_shaping else 0
+        )
 
         if is_live_turn:
             epsilon = epsilon_at(agent_step)
@@ -98,6 +105,11 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
         next_legal_mask = env.action_mask()
 
         if is_live_turn:
+            if not done and will_do_reward_shaping:
+                phi_s1 = env.material_balance(env.pieces, False)
+                shaping = DISCOUNT_FACTOR_GAMMA * phi_s1 - phi_s0
+                reward += shaping
+
             agent.store(state, legal_mask, action, reward, new_state, done, next_legal_mask)
             loss = agent.train_step()
             if loss is not None:
@@ -268,7 +280,7 @@ def train_agent(is_self_play: bool,
 
                 done, is_draw, is_white_on_turn, agent_step, info, move_count = train_self_play_episode(
                     env, agent, agent_step, losses, q_averages, q_maxs, q_mins,
-                    opponent_net=opponent_net
+                    opponent_net=opponent_net, will_do_reward_shaping=will_do_reward_shaping
                 )
 
             else:
@@ -335,4 +347,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(True, True, False, True, False, False)
+train_agent(True, True, True, True, True, False)
