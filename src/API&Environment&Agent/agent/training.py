@@ -230,7 +230,7 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        will_do_reward_shaping=False
+        will_do_reward_shaping=True
     )
 
     agent = GrenightAgent(
@@ -280,7 +280,7 @@ def train_agent(is_self_play: bool,
 
                 done, is_draw, is_white_on_turn, agent_step, info, move_count = train_self_play_episode(
                     env, agent, agent_step, losses, q_averages, q_maxs, q_mins,
-                    opponent_net=opponent_net, will_do_reward_shaping=True
+                    opponent_net=opponent_net, will_do_reward_shaping=False
                 )
 
             else:
