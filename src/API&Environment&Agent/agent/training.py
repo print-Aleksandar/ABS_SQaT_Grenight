@@ -20,7 +20,7 @@ from domain.configs import (
     LOG_EVERY_EPISODE,
     LOG_Q_EVERY_STEPS,
     DISCOUNT_FACTOR_GAMMA,
-    CHECKPOINT_DIR_KAGGLE as CHECKPOINT_DIR, BULK_UPDATE_EVERY_TRAIN_STEPS
+    CHECKPOINT_DIR_KAGGLE as CHECKPOINT_DIR
 )
 from agent.grenight_agent import GrenightAgent
 from environment.grenight_environment import GrenightEnvironment
@@ -77,7 +77,10 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
     while not done and move_count < MAX_STEPS_PER_EPISODE:
         is_white_on_turn = env.is_white_on_turn
         legal_mask = env.action_mask()
-        is_live_turn = (is_white_on_turn == live_plays_white) or opponent_net is None
+        is_live_turn = (
+                (is_white_on_turn == live_plays_white) or opponent_net is None
+                or env.use_curriculum
+        )
 
         # Note: this is true only when is canonical = True
         phi_s0 = (
@@ -86,6 +89,8 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
 
         if is_live_turn:
             epsilon = epsilon_at(agent_step)
+            if env.use_curriculum:
+                epsilon = max(epsilon, 0.30)
             action = agent.select_action(state, legal_mask, epsilon)
         else:
             with torch.no_grad():
@@ -230,6 +235,7 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
+        curriculum_prob=0.34
     )
 
     agent = GrenightAgent(
@@ -303,12 +309,10 @@ def train_agent(is_self_play: bool,
             if episode % CHECKPOINT_EVERY_EPISODES == 0:
                 save_checkpoint(agent, episode, agent_step, is_double_net)
 
-            if episode < 10_000:
-                cadence = 750
-            elif episode < 25_000:
-                cadence = 1_250
+            if episode <= 10_000:
+                cadence = 500
             else:
-                cadence = 2_500
+                cadence = 1_000
 
             if episode % cadence == 0:
                 if prev_prev_policy is not None:

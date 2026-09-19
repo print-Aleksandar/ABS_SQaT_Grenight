@@ -1,20 +1,5 @@
-"""
-inspect_tactics_all.py — Silverman 4 cols x 5 rows
-Diagnostic: runs the tactical scenario library against every trained agent version
-and prints per-agent results plus a side-by-side comparison.
-
-Versions (self-play, canonical, residual, double net):
-  S111111  dueling + reward shaping
-  S110111  reward shaping
-  S111110  dueling
-  S110110  base
-"""
-
 import copy
-
-import numpy as np
 import torch
-
 from domain.configs import ROWS, COLUMNS
 from domain.pieces import Pawn, Rook, King, Queen
 from environment.grenight_environment import (
@@ -23,11 +8,6 @@ from environment.grenight_environment import (
 )
 
 
-# ===========================================================================
-# AGENT VERSIONS
-# ===========================================================================
-# (tag, step, is_self_play, is_double_net, is_dueling_net,
-#  is_residual_net, is_canonical, reward_shaping)
 AGENT_VERSIONS = [
     ("S111111", 10_000, True, True, True,  True, True, True),
     ("S110111", 10_000, True, True, False, True, True, True),
@@ -38,10 +18,6 @@ AGENT_VERSIONS = [
 PROMO_ROOK = 1
 PROMO_QUEEN = 2
 
-
-# ===========================================================================
-# SCENARIO LIBRARY  (unchanged from inspect_tactics.py)
-# ===========================================================================
 
 def free_pawn_captures():
     return [
@@ -384,14 +360,9 @@ ALL_SCENARIOS = [
 ]
 
 
-# ===========================================================================
-# HELPERS  (unchanged from inspect_tactics.py)
-# ===========================================================================
-
 def build_env_for(pieces, is_white_on_turn, is_canonical):
     env = GrenightEnvironment(
-        is_canonical_version=is_canonical,
-        will_do_reward_shaping=True,
+        is_canonical_version=is_canonical
     )
     env.reset()
 
@@ -457,9 +428,6 @@ def q_values_for(agent, state, mask):
         return agent._q(agent.policy_net, state_t, mask_t).squeeze(0).cpu().numpy()
 
 
-# ===========================================================================
-# PASS HEURISTICS  (unchanged from inspect_tactics.py)
-# ===========================================================================
 PASS_HEURISTICS = {
     "free_capture":        lambda rank, n: rank == 1,
     "mate":                lambda rank, n: rank == 1,
@@ -473,10 +441,6 @@ PASS_HEURISTICS = {
     "promo_choice":        lambda rank, n: rank is not None and rank <= 2,
 }
 
-
-# ===========================================================================
-# SCENARIO INSPECTION  (unchanged, plus a return of result dict)
-# ===========================================================================
 
 def inspect_scenario(agent, is_canonical, title, scenarios, results):
     print("=" * 78)
@@ -558,10 +522,6 @@ def inspect_scenario(agent, is_canonical, title, scenarios, results):
         })
 
 
-# ===========================================================================
-# SUMMARY
-# ===========================================================================
-
 def print_summary(results):
     print("\n" + "=" * 78)
     print("  SUMMARY")
@@ -594,10 +554,6 @@ def print_summary(results):
         n = sum(1 for r in rs if r["passed"])
         print(f"    {kind:<22}: {n}/{len(rs)}")
 
-
-# ===========================================================================
-# CROSS-AGENT COMPARISON
-# ===========================================================================
 
 def print_comparison(per_agent_results):
     print("\n\n" + "#" * 88)
@@ -632,7 +588,6 @@ def print_comparison(per_agent_results):
         total_line += f"{n:>4}/{d:<3}({pct:>4.0f}%)"
     print(total_line)
 
-    # --- by kind ---
     print("\n" + "BY KIND".ljust(len(header), "-"))
     kinds = sorted({r["kind"] for rs in per_agent_results.values() for r in rs})
     for kind in kinds:
@@ -650,7 +605,6 @@ def print_comparison(per_agent_results):
     print("\n" + "PER-SCENARIO PASS/FAIL".ljust(len(header), "-"))
     print(f"{'SCENARIO':<56}" + "".join(f"{t:>8}" for t in tags))
 
-    # Collect scenario keys in order
     scenario_keys = []
     for cat, scenarios in ALL_SCENARIOS:
         for (_, desc, _, _, kind) in scenarios:
@@ -670,10 +624,6 @@ def print_comparison(per_agent_results):
         print(line)
 
 
-# ===========================================================================
-# MAIN
-# ===========================================================================
-
 def main():
     from agent.grenight_agent import GrenightAgent
     from agent.helpers.load_checkpoint import load_checkpoint
@@ -691,7 +641,6 @@ def main():
 
         env = GrenightEnvironment(
             is_canonical_version=is_canonical,
-            will_do_reward_shaping=reward_shaping,
         )
         state = env.reset()
         num_planes = state.shape[0]
@@ -707,10 +656,10 @@ def main():
             num_planes=num_planes,
             rows=ROWS,
             columns=COLUMNS,
-            num_actions=num_actions,
+            num_actions=num_actions
         )
+
         load_checkpoint(agent, tag, step)
-        agent.policy_net.eval()
 
         results = []
         for title, scenarios in ALL_SCENARIOS:
