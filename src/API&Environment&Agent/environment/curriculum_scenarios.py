@@ -33,16 +33,9 @@ _FREE_CAPTURE_SCENARIOS = [
     _scenario(lambda: [
         King('wk', True, (0, 0), False),
         King('bk', False, (0, 3), False),
-        Pawn('w3p', True, (3, 1), True),
-        Queen('bq', False, (4, 2), True),
+        Queen('wq', True, (2, 1), True),
+        Rook('br', False, (2, 3), True),
     ], True, FREE_CAPTURE),
-
-    _scenario(lambda: [
-        King('wk', True, (4, 3), False),
-        King('bk', False, (4, 0), False),
-        Pawn('b1p', False, (1, 2), True),
-        Rook('wr', True, (0, 1), True),
-    ], False, FREE_CAPTURE),
 
     _scenario(lambda: [
         King('wk', True, (0, 0), False),
@@ -54,23 +47,30 @@ _FREE_CAPTURE_SCENARIOS = [
     _scenario(lambda: [
         King('wk', True, (0, 0), False),
         King('bk', False, (0, 3), False),
-        Rook('br', False, (3, 3), True),
-        Rook('wr', True, (3, 0), True),
-    ], False, FREE_CAPTURE),
-
-    _scenario(lambda: [
-        King('wk', True, (0, 0), False),
-        King('bk', False, (0, 3), False),
-        Queen('wq', True, (2, 1), True),
-        Rook('br', False, (2, 3), True),
-    ], True, FREE_CAPTURE),
-
-    _scenario(lambda: [
-        King('wk', True, (0, 0), False),
-        King('bk', False, (0, 3), False),
         Pawn('w2p', True, (2, 1), True),
         Rook('br', False, (3, 2), True),
     ], True, FREE_CAPTURE),
+
+    _scenario(lambda: [
+        King('bk', False, (4, 0), False),
+        King('wk', True, (4, 3), False),
+        Queen('bq', False, (2, 1), True),
+        Rook('wr', True, (2, 3), True),
+    ], False, FREE_CAPTURE),
+
+    _scenario(lambda: [
+        King('bk', False, (4, 0), False),
+        King('wk', True, (4, 3), False),
+        Rook('br', False, (2, 0), True),
+        Queen('wq', True, (2, 3), True),
+    ], False, FREE_CAPTURE),
+
+    _scenario(lambda: [
+        King('bk', False, (4, 0), False),
+        King('wk', True, (4, 3), False),
+        Pawn('b2p', False, (2, 1), True),
+        Rook('wr', True, (1, 2), True),
+    ], False, FREE_CAPTURE),
 ]
 
 _MATE_SCENARIOS = [
@@ -91,6 +91,24 @@ _MATE_SCENARIOS = [
         Pawn('b3p', False, (3, 3), True),
         Queen('wq', True, (2, 0), True),
     ], True, MATE),
+
+    _scenario(lambda: [
+        King('bk', False, (4, 3), False),
+        King('wk', True, (0, 1), False),
+        Pawn('w1p', True, (1, 1), True),
+        Pawn('w2p', True, (1, 2), True),
+        Pawn('w3p', True, (1, 3), True),
+        Rook('br', False, (2, 0), True),
+    ], False, MATE),
+
+    _scenario(lambda: [
+        King('bk', False, (4, 3), False),
+        King('wk', True, (0, 2), False),
+        Pawn('w1p', True, (1, 1), True),
+        Pawn('w2p', True, (1, 2), True),
+        Pawn('w3p', True, (1, 3), True),
+        Queen('bq', False, (2, 0), True),
+    ], False, MATE),
 ]
 
 _POISONED_SCENARIOS = [
@@ -109,20 +127,56 @@ _POISONED_SCENARIOS = [
         Pawn('b1p', False, (0, 0), True),
         Queen('bq', False, (3, 0), True),
     ], True, POISONED),
+
+    _scenario(lambda: [
+        King('bk', False, (0, 3), False),
+        King('wk', True, (0, 0), False),
+        Queen('bq', False, (2, 1), True),
+        Pawn('w1p', True, (3, 1), True),
+        Pawn('w2p', True, (4, 0), True),
+    ], False, POISONED),
+
+    _scenario(lambda: [
+        King('bk', False, (0, 2), False),
+        King('wk', True, (0, 0), False),
+        Queen('bq', False, (4, 1), True),
+        Pawn('w1p', True, (4, 0), True),
+        Queen('wq', True, (1, 0), True),
+    ], False, POISONED),
 ]
 
 _ROOK_ACTIVITY_SCENARIOS = [
     _scenario(lambda: [
         King('wk', True, (0, 0), False),
         King('bk', False, (4, 3), False),
+        Pawn('w1p', True, (1, 1), True),
+        Pawn('b1p', False, (3, 2), True),
         Rook('wr', True, (2, 0), True),
     ], True, ROOK_ACTIVITY),
 
     _scenario(lambda: [
-        King('wk', True, (0, 0), False),
+        King('wk', True, (0, 1), False),
+        King('bk', False, (4, 2), False),
+        Pawn('w2p', True, (1, 3), True),
+        Pawn('b2p', False, (3, 0), True),
+        Rook('wr', True, (2, 3), True),
+    ], True, ROOK_ACTIVITY),
+
+    _scenario(lambda: [
         King('bk', False, (4, 0), False),
-        Rook('wr', True, (2, 2), True),
-    ], True, ROOK_ACTIVITY)
+        King('wk', True, (0, 3), False),
+        Pawn('b1p', False, (3, 1), True),
+        Pawn('w1p', True, (1, 2), True),
+        Rook('br', False, (2, 0), True),
+    ], False, ROOK_ACTIVITY),
+
+    _scenario(lambda: [
+        King('bk', False, (4, 1), False),
+        King('wk', True, (0, 2), False),
+        Pawn('b2p', False, (3, 3), True),
+        Pawn('w2p', True, (1, 0), True),
+        Rook('br', False, (2, 3), True),
+    ], False, ROOK_ACTIVITY),
 ]
 
 ALL_SCENARIOS = (
@@ -142,6 +196,7 @@ def _mirror_horizontal(pieces: list) -> list:
     for p in mirrored:
         y, x = p.position
         p.position = (y, COLUMNS - 1 - x)
+
     return mirrored
 
 
