@@ -69,7 +69,8 @@ class GrenightEnvironment:
         self.use_curriculum = 0.0 < self.curriculum_prob < random.random()
 
         if self.use_curriculum:
-            self.pieces, self.is_white_on_turn = generate_random_curriculum_scenario()
+            self.pieces = generate_random_curriculum_scenario()
+            self.is_white_on_turn = True if random.random() < 1/2 else False
 
         else:
             self.pieces, self.is_white_on_turn = create_initial_board(), True

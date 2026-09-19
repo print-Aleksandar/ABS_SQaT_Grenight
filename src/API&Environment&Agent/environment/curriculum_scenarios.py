@@ -2,7 +2,7 @@ import random
 from domain.configs import COLUMNS, ROWS
 from domain.pieces import Pawn, Rook, King, Piece
 
-def generate_random_curriculum_scenario() -> tuple[list[Piece], bool]:
+def generate_random_curriculum_scenario() -> list[Piece]:
 
     white_rooks = random.randint(1, 2)
     black_rooks = random.randint(1, 2)
@@ -21,21 +21,6 @@ def generate_random_curriculum_scenario() -> tuple[list[Piece], bool]:
     pieces_to_generate[(Rook, False)] = black_rooks
     pieces_to_generate[(Pawn, True)] = white_pawns
     pieces_to_generate[(Pawn, False)] = black_pawns
-
-    if black_rooks > white_rooks:
-        is_white_dominant = False
-    elif white_rooks > black_rooks:
-        is_white_dominant = True
-    else:
-        if black_pawns > white_pawns:
-            is_white_dominant = False
-        elif white_pawns > black_pawns:
-            is_white_dominant = True
-        else:
-            if random.random() < 0.5:
-                is_white_dominant = False
-            else:
-                is_white_dominant = True
 
     pieces = []
     pieces_positions = []
@@ -91,4 +76,4 @@ def generate_random_curriculum_scenario() -> tuple[list[Piece], bool]:
             else:
                 raise RuntimeError("No valid curriculum scenario could've been generated")
 
-    return pieces, is_white_dominant
+    return pieces
