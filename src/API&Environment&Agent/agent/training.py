@@ -82,7 +82,7 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
                 or env.use_curriculum
         )
 
-        # Note: this is true only when is canonical = True
+        # Note: this PBRS implementation is correct only when is canonical = True
         phi_s0 = (
             env.material_balance(env.pieces, True) if will_do_reward_shaping else 0
         )
@@ -90,7 +90,7 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
         if is_live_turn:
             epsilon = epsilon_at(agent_step)
             if env.use_curriculum:
-                epsilon = max(epsilon, 0.30)
+                epsilon = 0.3 if epsilon > 0.3 else epsilon
             action = agent.select_action(state, legal_mask, epsilon)
         else:
             with torch.no_grad():
@@ -111,7 +111,7 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
 
         if is_live_turn:
             if will_do_reward_shaping:
-                phi_s1 = env.material_balance(env.pieces, False)
+                phi_s1 = env.material_balance(env.pieces, False if not done else True)
                 shaping = DISCOUNT_FACTOR_GAMMA * phi_s1 - phi_s0
                 reward += shaping
 
