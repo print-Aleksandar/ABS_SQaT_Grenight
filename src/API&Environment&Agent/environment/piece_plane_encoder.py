@@ -5,13 +5,7 @@ from domain.configs import ROWS, COLUMNS
 
 class PiecePlaneEncoder:
 
-    NUM_PLANES = 12
-
-    WHITE_PIECES_PLANE = 8
-    BLACK_PIECES_PLANE = 9
-
-    PAWN, ROOK, QUEEN = 0, 1, 2
-    PIECE_VALUES = {PAWN: 0.02, ROOK: 0.1, QUEEN: 0.18}
+    NUM_PLANES = 10
 
     def __init__(self, is_absolute_perspective: bool | None=False) -> None:
         self.is_absolute_perspective = is_absolute_perspective
@@ -50,14 +44,6 @@ class PiecePlaneEncoder:
             piece_number = PIECES_NUMBERS[type(piece)]
             piece_offest = 4 - 1 - piece_number
 
-            piece_value = self.PIECE_VALUES.get(PIECES_NUMBERS[type(piece)], 0.0)
-            if not piece.is_white:
-                piece_value = -piece_value
-
-            state[self.num_planes - piece_offest - color_offest - 5, y, x] = 1.0
-            if piece.is_white:
-                state[self.num_planes - 4, y, x] = piece_value
-            else:
-                state[self.num_planes - 3, y, x] = piece_value
+            state[self.num_planes - piece_offest - color_offest - 3, y, x] = 1.0
 
         return state

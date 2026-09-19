@@ -105,7 +105,7 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
         next_legal_mask = env.action_mask()
 
         if is_live_turn:
-            if not done and will_do_reward_shaping:
+            if will_do_reward_shaping:
                 phi_s1 = env.material_balance(env.pieces, False)
                 shaping = DISCOUNT_FACTOR_GAMMA * phi_s1 - phi_s0
                 reward += shaping
@@ -230,7 +230,6 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        will_do_reward_shaping=True
     )
 
     agent = GrenightAgent(
@@ -280,7 +279,7 @@ def train_agent(is_self_play: bool,
 
                 done, is_draw, is_white_on_turn, agent_step, info, move_count = train_self_play_episode(
                     env, agent, agent_step, losses, q_averages, q_maxs, q_mins,
-                    opponent_net=opponent_net, will_do_reward_shaping=False
+                    opponent_net=opponent_net, will_do_reward_shaping=will_do_reward_shaping
                 )
 
             else:
@@ -304,13 +303,20 @@ def train_agent(is_self_play: bool,
             if episode % CHECKPOINT_EVERY_EPISODES == 0:
                 save_checkpoint(agent, episode, agent_step, is_double_net)
 
-            if episode % LOG_EVERY_EPISODE == 0:
-                if episode % (LOG_EVERY_EPISODE // 2) == 0:
-                    if prev_prev_policy is not None:
-                        pool.add(prev_prev_policy)
-                    prev_prev_policy = prev_policy
-                    prev_policy = deepcopy(agent.policy_net)
+            if episode < 10_000:
+                cadence = 750
+            elif episode < 25_000:
+                cadence = 1_250
+            else:
+                cadence = 2_500
 
+            if episode % cadence == 0:
+                if prev_prev_policy is not None:
+                    pool.add(prev_prev_policy)
+                prev_prev_policy = prev_policy
+                prev_policy = deepcopy(agent.policy_net)
+
+            if episode % LOG_EVERY_EPISODE == 0:
                 print()
                 print("─" * 72)
                 print(f"  EPISODE {episode:,}")

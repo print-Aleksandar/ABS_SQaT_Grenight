@@ -1,0 +1,4 @@
+SAME AS "verS0_configs.text" +
+max_pool_size=5
+prob_to_use_pool_in_ep=0.5
+prob_to_live_plays_for_white=0.5
