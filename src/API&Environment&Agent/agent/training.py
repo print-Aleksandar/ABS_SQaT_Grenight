@@ -20,7 +20,7 @@ from domain.configs import (
     LOG_EVERY_EPISODE,
     LOG_Q_EVERY_STEPS,
     DISCOUNT_FACTOR_GAMMA,
-    CHECKPOINT_DIR_KAGGLE as CHECKPOINT_DIR
+    CHECKPOINT_DIR_KAGGLE as CHECKPOINT_DIR, BULK_UPDATE_EVERY_TRAIN_STEPS
 )
 from agent.grenight_agent import GrenightAgent
 from environment.grenight_environment import GrenightEnvironment
