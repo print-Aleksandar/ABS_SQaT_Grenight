@@ -1,245 +1,94 @@
-import copy
-import numpy as np
-from domain.configs import COLUMNS
-from domain.pieces import Pawn, Rook, Queen, King
-from domain.requests import ValidMovesPiecesRequest
-from application.game_service import gather_valid_moves_player
+import random
+from domain.configs import COLUMNS, ROWS
+from domain.pieces import Pawn, Rook, King, Piece
 
-FREE_CAPTURE = "free_capture"
-MATE = "mate"
-POISONED = "poisoned"
-ROOK_ACTIVITY = "rook_activity"
+def generate_random_curriculum_scenario() -> tuple[list[Piece], bool]:
 
-DEFAULT_CATEGORY_WEIGHTS: dict[str, float] = {
-    FREE_CAPTURE: 0.40,
-    ROOK_ACTIVITY: 0.25,
-    MATE: 0.20,
-    POISONED: 0.15
-}
+    white_rooks = random.randint(1, 2)
+    black_rooks = random.randint(1, 2)
+    white_pawns = random.randint(0, 1)
+    black_pawns = random.randint(0, 1)
 
+    one_more_pawn = random.random()
+    if one_more_pawn > 1/3:
+        if one_more_pawn > 2/3:
+            white_pawns += 1
+        else:
+            black_pawns += 1
 
-def _scenario(pieces_factory,
-              mover_is_white: bool,
-              category: str) -> dict:
+    pieces_to_generate = dict()
+    pieces_to_generate[(Rook, True)] = white_rooks
+    pieces_to_generate[(Rook, False)] = black_rooks
+    pieces_to_generate[(Pawn, True)] = white_pawns
+    pieces_to_generate[(Pawn, False)] = black_pawns
 
-    return {
-        "pieces_factory": pieces_factory,
-        "mover_is_white": mover_is_white,
-        "category": category
-    }
+    if black_rooks > white_rooks:
+        is_white_dominant = False
+    elif white_rooks > black_rooks:
+        is_white_dominant = True
+    else:
+        if black_pawns > white_pawns:
+            is_white_dominant = False
+        elif white_pawns > black_pawns:
+            is_white_dominant = True
+        else:
+            if random.random() < 0.5:
+                is_white_dominant = False
+            else:
+                is_white_dominant = True
 
+    pieces = []
+    pieces_positions = []
 
-_FREE_CAPTURE_SCENARIOS = [
-    _scenario(lambda: [
-        King('wk', True, (0, 0), False),
-        King('bk', False, (0, 3), False),
-        Queen('wq', True, (2, 1), True),
-        Rook('br', False, (2, 3), True),
-    ], True, FREE_CAPTURE),
+    wy, wx = random.randint(0, ROWS - 1), random.randint(0, COLUMNS - 1)
+    wpos = (wy, wx)
+    king = King("wk", True, wpos, True)
+    pieces.append(king)
+    pieces_positions.append(wpos)
 
-    _scenario(lambda: [
-        King('wk', True, (0, 0), False),
-        King('bk', False, (0, 3), False),
-        Rook('wr', True, (2, 0), True),
-        Queen('bq', False, (2, 3), True),
-    ], True, FREE_CAPTURE),
+    while True:
+        by, bx = random.randint(0, ROWS - 1), random.randint(0, COLUMNS - 1)
+        bpos = (by, bx)
+        if abs(by - wy) > 1 or abs(bx - wx) > 1:
+            king = King("bk", False, bpos, True)
+            pieces.append(king)
+            pieces_positions.append(bpos)
+            break
 
-    _scenario(lambda: [
-        King('wk', True, (0, 0), False),
-        King('bk', False, (0, 3), False),
-        Pawn('w2p', True, (2, 1), True),
-        Rook('br', False, (3, 2), True),
-    ], True, FREE_CAPTURE),
+    for k, v in pieces_to_generate.items():
+        cls, clr = k
+        for _ in range(v):
+            for i in range(200):
+                y, x = random.randint(0 if cls == Rook else 1, ROWS - 1 if cls == Rook else ROWS - 2), random.randint(0, COLUMNS - 1)
+                pos = (y, x)
+                if pos not in pieces_positions:
+                    if cls == Pawn:
+                        if clr:
+                            if bpos not in [(y + 1, x + 1), (y + 1, x - 1)]:
+                                pawn = Pawn(("p" + str(len(pieces))), clr, pos, True)
+                                pieces.append(pawn)
+                                pieces_positions.append(pos)
+                                break
+                        else:
+                            if wpos not in [(y - 1, x + 1), (y - 1, x - 1)]:
+                                pawn = Pawn(("p" + str(len(pieces))), clr, pos, True)
+                                pieces.append(pawn)
+                                pieces_positions.append(pos)
+                                break
+                    else:
+                        if clr:
+                            if y != by and x != bx:
+                                rook = Rook(("r" + str(len(pieces))), clr, pos, True)
+                                pieces.append(rook)
+                                pieces_positions.append(pos)
+                                break
+                        else:
+                            if y != wy and x != wx:
+                                rook = Rook(("r" + str(len(pieces))), clr, pos, True)
+                                pieces.append(rook)
+                                pieces_positions.append(pos)
+                                break
+            else:
+                raise RuntimeError("No valid curriculum scenario could've been generated")
 
-    _scenario(lambda: [
-        King('bk', False, (4, 0), False),
-        King('wk', True, (4, 3), False),
-        Queen('bq', False, (2, 1), True),
-        Rook('wr', True, (2, 3), True),
-    ], False, FREE_CAPTURE),
-
-    _scenario(lambda: [
-        King('bk', False, (4, 0), False),
-        King('wk', True, (4, 3), False),
-        Rook('br', False, (2, 0), True),
-        Queen('wq', True, (2, 3), True),
-    ], False, FREE_CAPTURE),
-
-    _scenario(lambda: [
-        King('bk', False, (4, 0), False),
-        King('wk', True, (4, 3), False),
-        Pawn('b2p', False, (2, 1), True),
-        Rook('wr', True, (1, 2), True),
-    ], False, FREE_CAPTURE),
-]
-
-_MATE_SCENARIOS = [
-    _scenario(lambda: [
-        King('wk', True, (0, 3), False),
-        King('bk', False, (4, 1), False),
-        Pawn('b1p', False, (3, 1), True),
-        Pawn('b2p', False, (3, 2), True),
-        Pawn('b3p', False, (3, 3), True),
-        Rook('wr', True, (2, 0), True),
-    ], True, MATE),
-
-    _scenario(lambda: [
-        King('wk', True, (0, 3), False),
-        King('bk', False, (4, 2), False),
-        Pawn('b1p', False, (3, 1), True),
-        Pawn('b2p', False, (3, 2), True),
-        Pawn('b3p', False, (3, 3), True),
-        Queen('wq', True, (2, 0), True),
-    ], True, MATE),
-
-    _scenario(lambda: [
-        King('bk', False, (4, 3), False),
-        King('wk', True, (0, 1), False),
-        Pawn('w1p', True, (1, 1), True),
-        Pawn('w2p', True, (1, 2), True),
-        Pawn('w3p', True, (1, 3), True),
-        Rook('br', False, (2, 0), True),
-    ], False, MATE),
-
-    _scenario(lambda: [
-        King('bk', False, (4, 3), False),
-        King('wk', True, (0, 2), False),
-        Pawn('w1p', True, (1, 1), True),
-        Pawn('w2p', True, (1, 2), True),
-        Pawn('w3p', True, (1, 3), True),
-        Queen('bq', False, (2, 0), True),
-    ], False, MATE),
-]
-
-_POISONED_SCENARIOS = [
-    _scenario(lambda: [
-        King('wk', True, (4, 3), False),
-        King('bk', False, (4, 0), False),
-        Queen('wq', True, (2, 1), True),
-        Pawn('b1p', False, (1, 1), True),
-        Pawn('b2p', False, (0, 0), True),
-    ], True, POISONED),
-
-    _scenario(lambda: [
-        King('wk', True, (4, 2), False),
-        King('bk', False, (4, 0), False),
-        Queen('wq', True, (0, 1), True),
-        Pawn('b1p', False, (0, 0), True),
-        Queen('bq', False, (3, 0), True),
-    ], True, POISONED),
-
-    _scenario(lambda: [
-        King('bk', False, (0, 3), False),
-        King('wk', True, (0, 0), False),
-        Queen('bq', False, (2, 1), True),
-        Pawn('w1p', True, (3, 1), True),
-        Pawn('w2p', True, (4, 0), True),
-    ], False, POISONED),
-
-    _scenario(lambda: [
-        King('bk', False, (0, 2), False),
-        King('wk', True, (0, 0), False),
-        Queen('bq', False, (4, 1), True),
-        Pawn('w1p', True, (4, 0), True),
-        Queen('wq', True, (1, 0), True),
-    ], False, POISONED),
-]
-
-_ROOK_ACTIVITY_SCENARIOS = [
-    _scenario(lambda: [
-        King('wk', True, (0, 0), False),
-        King('bk', False, (4, 3), False),
-        Pawn('w1p', True, (1, 1), True),
-        Pawn('b1p', False, (3, 2), True),
-        Rook('wr', True, (2, 0), True),
-    ], True, ROOK_ACTIVITY),
-
-    _scenario(lambda: [
-        King('wk', True, (0, 1), False),
-        King('bk', False, (4, 2), False),
-        Pawn('w2p', True, (1, 3), True),
-        Pawn('b2p', False, (3, 0), True),
-        Rook('wr', True, (2, 3), True),
-    ], True, ROOK_ACTIVITY),
-
-    _scenario(lambda: [
-        King('bk', False, (4, 0), False),
-        King('wk', True, (0, 3), False),
-        Pawn('b1p', False, (3, 1), True),
-        Pawn('w1p', True, (1, 2), True),
-        Rook('br', False, (2, 0), True),
-    ], False, ROOK_ACTIVITY),
-
-    _scenario(lambda: [
-        King('bk', False, (4, 1), False),
-        King('wk', True, (0, 2), False),
-        Pawn('b2p', False, (3, 3), True),
-        Pawn('w2p', True, (1, 0), True),
-        Rook('br', False, (2, 3), True),
-    ], False, ROOK_ACTIVITY),
-]
-
-ALL_SCENARIOS = (
-    _FREE_CAPTURE_SCENARIOS
-    + _MATE_SCENARIOS
-    + _POISONED_SCENARIOS
-    + _ROOK_ACTIVITY_SCENARIOS
-)
-
-_BY_CATEGORY: dict[str, list[dict]] = {}
-for _s in ALL_SCENARIOS:
-    _BY_CATEGORY.setdefault(_s["category"], []).append(_s)
-
-
-def _mirror_horizontal(pieces: list) -> list:
-    mirrored = copy.deepcopy(pieces)
-    for p in mirrored:
-        y, x = p.position
-        p.position = (y, COLUMNS - 1 - x)
-
-    return mirrored
-
-
-def _has_legal_move(pieces: list,
-                    is_white_on_turn: bool) -> bool:
-
-    request = ValidMovesPiecesRequest(
-        pieces=pieces,
-        is_for_white=is_white_on_turn,
-        is_for_white_turn=is_white_on_turn,
-        is_current_move_promotion=False,
-    )
-
-    moves = gather_valid_moves_player(request)
-    return any(len(v) > 0 for v in moves.values())
-
-
-def random_scenario(rng: np.random.Generator,
-                    category_weights: dict[str, float] | None = None,
-                    max_attempts: int = 10) -> tuple[list, bool]:
-
-    weights = category_weights or DEFAULT_CATEGORY_WEIGHTS
-    categories = [c for c in weights if _BY_CATEGORY.get(c)]
-    probs = np.array([weights[c] for c in categories], dtype=float)
-    probs = probs / probs.sum()
-
-    for _ in range(max_attempts):
-        category = rng.choice(categories, p=probs)
-        options = _BY_CATEGORY[category]
-        base = options[int(rng.integers(len(options)))]
-
-        pieces = base["pieces_factory"]()
-        mover_is_white = base["mover_is_white"]
-
-        if rng.random() < 0.5:
-            pieces = _mirror_horizontal(pieces)
-
-        if _has_legal_move(pieces, mover_is_white):
-            return pieces, mover_is_white
-
-    for s in ALL_SCENARIOS:
-        pieces = s["pieces_factory"]()
-        if _has_legal_move(pieces, s["mover_is_white"]):
-            return pieces, s["mover_is_white"]
-
-    raise RuntimeError("No valid curriculum scenario available")
+    return pieces, is_white_dominant

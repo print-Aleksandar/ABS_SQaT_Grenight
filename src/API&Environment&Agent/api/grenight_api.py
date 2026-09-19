@@ -18,6 +18,7 @@ from api.api_validators import (non_existent_valid_piece_with_uid_exception,
                                 player_wants_to_gather_valid_moves_for_enemy_piece_exception,
                                 agent_not_on_turn_exception)
 from domain.responses import MoveResponse
+from environment.curriculum_scenarios import generate_random_curriculum_scenario
 from environment.grenight_environment import GrenightEnvironment, rotate_pieces_helper
 from agent.grenight_agent import GrenightAgent
 from agent.helpers.load_checkpoint import load_checkpoint
@@ -42,8 +43,10 @@ def health():
 def get_initial_board() -> InitialBoardResponseDTO:
     env.reset()
 
+    ps, dom = generate_random_curriculum_scenario()
+    print(dom)
     return InitialBoardResponseDTO(
-        pieces=[get_dto_from_piece(piece) for piece in create_initial_board()],
+        pieces=[get_dto_from_piece(piece) for piece in ps],
         is_white_on_turn=True
     )
 
@@ -159,8 +162,7 @@ def agent_move(request_arg: AgentMoveRequestDTO) -> MoveResponseDTO:
     )
 
 
-env = GrenightEnvironment(is_canonical_version=True,
-                          will_do_reward_shaping=True)
+env = GrenightEnvironment(is_canonical_version=True)
 
 agent = GrenightAgent(
     is_self_play=True,
@@ -173,8 +175,6 @@ agent = GrenightAgent(
     num_planes=env.state_encoder.num_planes,
     device="cpu"
 )
-
-load_checkpoint(agent, "S111110", 10_000)
 
 
 def agent_taking_action(pieces: list[Piece]) -> MoveResponse:

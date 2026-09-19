@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from domain.configs import MAX_STEPS_WITHOUT_PROGRESS, ROWS
 from domain.pieces import Piece, Pawn, PIECES_NUMBERS
@@ -7,7 +9,7 @@ from domain.board_initialization import create_initial_board
 from application.game_service import make_move, gather_valid_moves_player
 from application.board_getter import get_piece_by_position
 from environment.action_encoder import ActionEncoder
-from environment.curriculum_scenarios import random_scenario
+from environment.curriculum_scenarios import generate_random_curriculum_scenario
 from environment.piece_plane_encoder import PiecePlaneEncoder
 
 
@@ -24,12 +26,10 @@ def rotate_pieces_helper(pieces: list[Piece]) -> None:
 class GrenightEnvironment:
 
     PAWN, ROOK, QUEEN = 0, 1, 2
-    PIECE_VALUES = {PAWN: 0.1, ROOK: 0.5, QUEEN: 0.9}
+    PIECE_VALUES = {PAWN: 0.05, ROOK: 0.25, QUEEN: 0.45}
 
     def __init__(self, is_canonical_version: bool,
-                 curriculum_prob: float = 0.0,
-                 curriculum_category_weights: dict[str, float] | None=None,
-                 rng: np.random.Generator | None=None) -> None:
+                 curriculum_prob: float = 0.0) -> None:
 
         self.is_canonical_version = is_canonical_version
 
@@ -55,8 +55,6 @@ class GrenightEnvironment:
         self._state_cache: np.ndarray | None = None
 
         self.curriculum_prob = curriculum_prob
-        self.curriculum_category_weights = curriculum_category_weights
-        self._rng = rng if rng is not None else np.random.default_rng()
         self.use_curriculum = False
 
     def load_pieces_absolute(self, pieces: list[Piece]) -> None:
@@ -67,24 +65,14 @@ class GrenightEnvironment:
         self.current_repetition_count = self.position_counts.get(key, 0) + 1
         self.position_counts[key] = self.current_repetition_count
 
-    def reset(self, force_initial: bool = False) -> np.ndarray:
-        self.use_curriculum = (
-                not force_initial
-                and self.curriculum_prob > 0.0
-                and self._rng.random() < self.curriculum_prob
-        )
+    def reset(self) -> np.ndarray:
+        self.use_curriculum = 0.0 < self.curriculum_prob < random.random()
 
         if self.use_curriculum:
-            self.pieces, self.is_white_on_turn = random_scenario(
-                self._rng, self.curriculum_category_weights
-            )
+            self.pieces, self.is_white_on_turn = generate_random_curriculum_scenario()
 
         else:
             self.pieces, self.is_white_on_turn = create_initial_board(), True
-
-        if self.use_curriculum and not self.is_white_on_turn:
-            rotate_pieces_helper(self.pieces)
-            self.is_white_on_turn = True
 
         self.done = False
         self.steps_without_pawn_move_or_capture = 0
