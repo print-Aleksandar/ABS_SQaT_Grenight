@@ -235,7 +235,7 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        curriculum_prob=0.34
+        curriculum_prob=0.0
     )
 
     agent = GrenightAgent(
@@ -357,4 +357,4 @@ def train_agent(is_self_play: bool,
         save_checkpoint(agent, episode, agent_step, is_double_net)
         print("Done.")
 
-train_agent(True, True, True, True, True, False)
+train_agent(True, True, True, True, True, True)
