@@ -26,15 +26,17 @@ def rotate_pieces_helper(pieces: list[Piece]) -> None:
 class GrenightEnvironment:
 
     PAWN, ROOK, QUEEN = 0, 1, 2
-    PIECE_VALUES = {PAWN: 0.05, ROOK: 0.25, QUEEN: 0.45}
+    PIECE_VALUES = {PAWN: 0.02, ROOK: 0.1, QUEEN: 0.18}
 
     def __init__(self, is_canonical_version: bool,
-                 curriculum_prob: float = 0.0) -> None:
+                 curriculum_prob: float = 0.0,
+                 is_legacy_encoder: bool | None=False) -> None:
 
         self.is_canonical_version = is_canonical_version
+        self.is_legacy_encoder = is_legacy_encoder
 
         self.action_encoder = ActionEncoder(self.is_canonical_version)
-        self.state_encoder = PiecePlaneEncoder(not self.is_canonical_version)
+        self.state_encoder = PiecePlaneEncoder(not self.is_canonical_version, self.is_legacy_encoder)
 
         self.pieces = None
 

@@ -89,8 +89,6 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
 
         if is_live_turn:
             epsilon = epsilon_at(agent_step)
-            if env.use_curriculum:
-                epsilon = 0.3 if epsilon > 0.3 else epsilon
             action = agent.select_action(state, legal_mask, epsilon)
         else:
             with torch.no_grad():
@@ -110,7 +108,7 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
         next_legal_mask = env.action_mask()
 
         if is_live_turn:
-            if will_do_reward_shaping and not done:
+            if will_do_reward_shaping:
                 phi_s1 = env.material_balance(env.pieces, False if not done else True)
                 shaping = DISCOUNT_FACTOR_GAMMA * phi_s1 - phi_s0
                 reward += shaping
@@ -235,7 +233,7 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        curriculum_prob=0.34
+        curriculum_prob=1/3
     )
 
     agent = GrenightAgent(
@@ -309,10 +307,12 @@ def train_agent(is_self_play: bool,
             if episode % CHECKPOINT_EVERY_EPISODES == 0:
                 save_checkpoint(agent, episode, agent_step, is_double_net)
 
-            if episode <= 10_000:
+            if episode < 10_000:
                 cadence = 500
+            elif episode < 20_000:
+                cadence = 1000
             else:
-                cadence = 1_000
+                cadence = 2000
 
             if episode % cadence == 0:
                 if prev_prev_policy is not None:

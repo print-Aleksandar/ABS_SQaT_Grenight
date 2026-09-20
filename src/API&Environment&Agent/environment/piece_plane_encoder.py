@@ -7,12 +7,19 @@ class PiecePlaneEncoder:
 
     NUM_PLANES = 10
 
-    def __init__(self, is_absolute_perspective: bool | None=False) -> None:
+    def __init__(self, is_absolute_perspective: bool | None=False,
+                 is_legacy_encoder: bool | None=False) -> None:
+
         self.is_absolute_perspective = is_absolute_perspective
+        self.is_legacy_encoder = is_legacy_encoder
+
         self.num_planes = self.NUM_PLANES
 
         if self.is_absolute_perspective:
             self.num_planes += 1
+
+        if self.is_legacy_encoder:
+            self.num_planes += 2
 
         self.no_progress_plane = self.num_planes - 2
         self.repetition_plane = self.num_planes - 1
@@ -44,6 +51,15 @@ class PiecePlaneEncoder:
             piece_number = PIECES_NUMBERS[type(piece)]
             piece_offest = 4 - 1 - piece_number
 
-            state[self.num_planes - piece_offest - color_offest - 3, y, x] = 1.0
+            if self.is_legacy_encoder:
+                state[self.num_planes - piece_offest - color_offest - 5, y, x] = 1.0
+            else:
+                state[self.num_planes - piece_offest - color_offest - 3, y, x] = 1.0
+
+            if self.is_legacy_encoder:
+                if current_player_is_white:
+                    state[-4, y, x] = 1.0
+                else:
+                    state[-3, y, x] = 1.0
 
         return state

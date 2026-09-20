@@ -3,6 +3,7 @@ from agent.grenight_agent import GrenightAgent
 from domain.configs import MAX_STEPS_PER_EPISODE
 from environment.action_encoder import ActionEncoder
 from environment.grenight_environment import GrenightEnvironment
+from environment.piece_plane_encoder import PiecePlaneEncoder
 
 
 def test_agents(left_agent: GrenightAgent,
@@ -10,16 +11,17 @@ def test_agents(left_agent: GrenightAgent,
                 left_name: str,
                 right_name: str,
                 is_left_canonical: bool | None=True,
-                is_right_canonical: bool | None=True) -> str:
+                is_right_canonical: bool | None=True,
+                is_left_legacy: bool | None=True,
+                is_right_legacy: bool | None=True) -> str:
 
     env = GrenightEnvironment(
-        is_canonical_version=True,
-        will_do_reward_shaping=False
+        is_canonical_version=True
     )
 
     outcomes = Counter()
 
-    for _ in range(1_000):
+    for _ in range(100):
         env.reset()
 
         move_count = 0
@@ -31,6 +33,9 @@ def test_agents(left_agent: GrenightAgent,
             is_white_on_turn = True
 
             env.action_encoder = ActionEncoder(is_canonical_version=is_left_canonical)
+            env.state_encoder = PiecePlaneEncoder(is_absolute_perspective=not is_left_canonical,
+                                                  is_legacy_encoder=is_left_legacy)
+            env._state_cache = None
 
             left_state = env.get_state()
             left_mask = env.action_mask()
@@ -43,6 +48,9 @@ def test_agents(left_agent: GrenightAgent,
                 is_white_on_turn = False
 
                 env.action_encoder = ActionEncoder(is_canonical_version=is_right_canonical)
+                env.state_encoder = PiecePlaneEncoder(is_absolute_perspective=not is_right_canonical,
+                                                      is_legacy_encoder=is_right_legacy)
+                env._state_cache = None
 
                 right_state = env.get_state()
                 right_mask = env.action_mask()
