@@ -79,8 +79,14 @@ class GrenightEnvironment:
         self.use_curriculum = 0.0 < self.curriculum_prob < random.random()
 
         if self.use_curriculum:
-            self.pieces = generate_random_curriculum_scenario()
-            self.is_white_on_turn = True if random.random() < 1/2 else False
+            for _ in range(10):
+                self.pieces = generate_random_curriculum_scenario()
+                self.is_white_on_turn = True if random.random() < 1/2 else False
+
+                if len(self.legal_actions()) > 0:
+                    break
+            else:
+                self.pieces, self.is_white_on_turn = create_initial_board(), True
 
         else:
             self.pieces, self.is_white_on_turn = create_initial_board(), True
