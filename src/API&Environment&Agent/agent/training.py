@@ -89,7 +89,10 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
 
         if is_live_turn:
             epsilon = epsilon_at(agent_step)
-            action = agent.select_action(state, legal_mask, epsilon)
+            try:
+                action = agent.select_action(state, legal_mask, epsilon)
+            except Exception as e:
+                print(state, env.use_curriculum)
         else:
             with torch.no_grad():
                 state_t = torch.from_numpy(state).unsqueeze(0).to(agent.device)
@@ -234,7 +237,7 @@ def train_agent(is_self_play: bool,
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
         will_do_reward_shaping=will_do_reward_shaping,
-        curriculum_prob=0.05
+        curriculum_prob=1.0
     )
 
     agent = GrenightAgent(
