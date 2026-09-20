@@ -14,10 +14,15 @@ def evaluate_agent_by_all_combos(env: GrenightEnvironment,
                                  agent: GrenightAgent,
                                  is_self_play: bool) -> None:
 
+    cp = env.curriculum_prob
+    env.curriculum_prob = 0.0
+
     evaluate_agent(env, agent, is_self_play,True, False)
 
     if is_self_play:
         evaluate_agent(env, agent, is_self_play,False, True)
+
+    env.curriculum_prob = cp
 
 
 def evaluate_agent(env: GrenightEnvironment,

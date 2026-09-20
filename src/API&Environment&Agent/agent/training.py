@@ -108,7 +108,7 @@ def train_self_play_episode(env, agent, agent_step, losses, q_averages,
         next_legal_mask = env.action_mask()
 
         if is_live_turn:
-            if will_do_reward_shaping and not done:
+            if will_do_reward_shaping:
                 phi_s1 = env.material_balance(env.pieces, False if not done else True)
                 shaping = DISCOUNT_FACTOR_GAMMA * phi_s1 - phi_s0
                 reward += shaping
@@ -233,7 +233,8 @@ def train_agent(is_self_play: bool,
 
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
-        curriculum_prob=1/3
+        will_do_reward_shaping=will_do_reward_shaping,
+        curriculum_prob=0.05
     )
 
     agent = GrenightAgent(

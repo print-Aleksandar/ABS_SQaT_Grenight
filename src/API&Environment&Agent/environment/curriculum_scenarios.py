@@ -6,8 +6,8 @@ def generate_random_curriculum_scenario() -> list[Piece]:
 
     white_rooks = random.randint(1, 2)
     black_rooks = random.randint(1, 2)
-    white_pawns = random.randint(0, 1)
-    black_pawns = random.randint(0, 1)
+    white_pawns = 1
+    black_pawns = 1
 
     one_more_pawn = random.random()
     if one_more_pawn > 1/3:
@@ -15,6 +15,13 @@ def generate_random_curriculum_scenario() -> list[Piece]:
             white_pawns += 1
         else:
             black_pawns += 1
+
+    remove_one_rook = random.random()
+    if remove_one_rook < 1/2:
+        if remove_one_rook < 1/4:
+            white_rooks -= 1
+        else:
+            black_rooks -= 1
 
     pieces_to_generate = dict()
     pieces_to_generate[(Rook, True)] = white_rooks

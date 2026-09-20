@@ -22,3 +22,5 @@ Thumbs.db
 *.log
 checkpoints/
 .pt
+*.vpp.lck
+*.vpp.bak*
