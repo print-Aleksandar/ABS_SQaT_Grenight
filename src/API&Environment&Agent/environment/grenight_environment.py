@@ -76,7 +76,7 @@ class GrenightEnvironment:
         self.position_counts[key] = self.current_repetition_count
 
     def reset(self) -> np.ndarray:
-        self.use_curriculum = 0.0 < self.curriculum_prob < random.random()
+        self.use_curriculum = 0.0 < random.random() < self.curriculum_prob
 
         if self.use_curriculum:
             for _ in range(10):

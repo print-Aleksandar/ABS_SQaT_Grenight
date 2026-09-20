@@ -234,7 +234,7 @@ def train_agent(is_self_play: bool,
     env = GrenightEnvironment(
         is_canonical_version=is_canonical_version,
         will_do_reward_shaping=will_do_reward_shaping,
-        curriculum_prob=1.0
+        curriculum_prob=0.1
     )
 
     agent = GrenightAgent(
