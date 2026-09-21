@@ -173,7 +173,7 @@ agent = GrenightAgent(
     device="cpu"
 )
 
-load_checkpoint(agent, "S111111R", 10_000)
+load_checkpoint(agent, "S111111R", 30_000)
 
 
 def agent_taking_action(pieces: list[Piece]) -> MoveResponse:
