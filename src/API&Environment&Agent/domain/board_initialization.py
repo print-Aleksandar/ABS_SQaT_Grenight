@@ -9,6 +9,13 @@ POSITIONS = []
 def create_initial_board() -> list[Piece]:
     pieces = []
 
+    pieces.append(King('bk', False, (4, 0), False))
+    pieces.append(Rook('wr1', True, (0, 1), False))
+    pieces.append(Rook('wr2', True, (1, 1), False))
+    pieces.append(King('wk', True, (0, 3), False))
+
+    return pieces
+
     pieces.append(Queen('wq',True, (0, (COLUMNS // 2) - 1), False))
     pieces.append(Queen('bq',False, (ROWS - 1, (COLUMNS // 2) - 1), False))
 
